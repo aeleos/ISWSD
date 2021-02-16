@@ -8,9 +8,10 @@
 
     Our Pin Assignments
 
-    D8 Low Battery Warning, connected to LBO pin, will be pulled to ground if battery is low (can potentionally combine this with A3 if LBO is actually connected to BAT
-    D9, D10 Software Serial for GPS
-    D11 MOSI, D12 MISO, D13 Clock, SPI for SD Card
+    D6 Low Battery Warning, connected to LBO pin, will be pulled to ground if battery is low (can potentionally combine this with A3 if LBO is actually connected to BAT
+    D7, D8 Software Serial for GPS
+    D9 CD SD Card Detect
+    D10 CS, D11 MOSI, D12 MISO, D13 Clock, SPI for SD Card
     A3 Battery Voltage, connected to BAT pin on PowerBoost
     A4 Data, A5 Clock I2C for LCD, Altimeter
 */
@@ -39,7 +40,7 @@ LCD lcd(0x27, 20, 4); // set the LCD address to 0x27 for a 16 chars and 2 line d
 #define GPS_BAUD 9600
 
 // Software Serial Object for GPS, (rx, tx)
-SoftwareSerial gps_ss(9, 10);
+SoftwareSerial gps_ss(7, 8);
 
 // GPS Object
 TinyGPS gps;
@@ -73,7 +74,7 @@ void setup()
   Serial.print("Initializing DPS310 Pressure... ");
   if (! dps.begin_I2C(DPS310_I2CADDR_DEFAULT, &Wire)) {
     Serial.print(" ... ");
-    while (1) yield();
+//    while (1) y/ield();
   }
   Serial.print("Configuring... ");
 
@@ -106,6 +107,14 @@ void loop()
   unsigned long num_sats;
 
   num_sats = gps.satellites();
+  unsigned long age, date, time, chars = 0;
+  unsigned short sentences = 0, failed = 0;
+
+  gps.stats(&chars, &sentences, &failed);
+
+  Serial.println(chars);
+  Serial.println(sentences);
+  Serial.println(failed);
 
   if (num_sats == TinyGPS::GPS_INVALID_SATELLITES) {
     Serial.println("GPS has no lock");
@@ -113,6 +122,8 @@ void loop()
     Serial.print("GPS has ");
     Serial.print(num_sats);
     Serial.println(" Satellites");
+//    lcd.gpslock_screen(num_sats);/
+    lcd.print_measurement(0, 0, 0, 0, 0);
   }
 
   sensors_event_t temp_event, pressure_event;

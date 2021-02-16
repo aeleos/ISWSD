@@ -9,7 +9,7 @@ LCD::LCD(int addr, int cols, int rows) : LiquidCrystal_I2C(addr,cols,rows)
 
 void LCD::setup(){
   LCD::init();
-  LCD::noBacklight();
+  LCD::backlight();
   LCD::noCursor();
   LCD::noBlink();
   return;
@@ -57,9 +57,10 @@ void LCD::startup_screen(){
 }
 
 void LCD::gpslock_screen(int sats){
+  String output = "GPS: " + String(sats) + " sats";
   LCD::clear();
   LCD::setCursor(0, 0);
-  LCD::print("GPS: %d sats");
+  LCD::print(output);
   return;
 }
 
