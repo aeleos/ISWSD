@@ -2,7 +2,7 @@
 #include "lcd.h"
 // LCD Functions
 
-LCD::LCD(int addr, int cols, int rows) : LiquidCrystal_I2C(addr,cols,rows)
+LCD::LCD(uint8_t addr, uint8_t cols, uint8_t rows) : LiquidCrystal_I2C(addr,cols,rows)
 {
   
 }
@@ -21,7 +21,7 @@ void LCD::print_battery(int percent){
   return;
 }
 
-void LCD::progress_loop(int col, int row, int loops){
+void LCD::progress_loop(uint8_t col, uint8_t row, int loops){
   if (loopcount < loops){
     loopcount++;
     return;
