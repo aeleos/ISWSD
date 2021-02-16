@@ -26,7 +26,7 @@
 #include <Adafruit_DPS310.h>
 #include <SoftwareSerial.h>
 #include <TinyGPS.h>
-#include "LiquidCrystal_I2C.h"
+#include "lcd.h"
 
 // Pressure Sensor Object
 Adafruit_DPS310 dps;
@@ -34,7 +34,7 @@ Adafruit_Sensor *dps_temp = dps.getTemperatureSensor();
 Adafruit_Sensor *dps_pressure = dps.getPressureSensor();
 
 // Liquid Crystal Display Object
-LiquidCrystal_I2C lcd(0x27, 20, 4); // set the LCD address to 0x27 for a 16 chars and 2 line display
+LCD lcd(0x27, 20, 4); // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 #define GPS_BAUD 9600
 
@@ -57,17 +57,8 @@ void setup()
 
   // Initialize the LCD, will call Wire.begin()
 
-  lcd.init();                      // initialize the lcd
-  // Print a message to the LCD.
-  lcd.backlight();
-  lcd.setCursor(3, 0);
-  lcd.print("Hello, world!");
-  lcd.setCursor(2, 1);
-  lcd.print("Ywrobot Arduino!");
-  lcd.setCursor(0, 2);
-  lcd.print("Arduino LCM IIC 2004");
-  lcd.setCursor(2, 3);
-  lcd.print("Power By Ec-yuan!");
+  lcd.setup();                      // initialize the lcd
+  lcd.startup_screen();
 
   Serial.println("Done");
 
