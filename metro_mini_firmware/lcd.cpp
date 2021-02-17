@@ -2,6 +2,23 @@
 #include "lcd.h"
 // LCD Functions
 
+#if defined(ARDUINO) && ARDUINO >= 100
+#define printByte(args)  write(args);
+#else
+#define printByte(args)  print(args,BYTE);
+#endif
+
+uint8_t delta[] = {
+  0x04,
+  0x04,
+  0x0A,
+  0x0A,
+  0x0A,
+  0x11,
+  0x11,
+  0x1F
+};
+
 LCD::LCD(uint8_t addr, uint8_t cols, uint8_t rows) : LiquidCrystal_I2C(addr,cols,rows)
 {
   
@@ -10,6 +27,7 @@ LCD::LCD(uint8_t addr, uint8_t cols, uint8_t rows) : LiquidCrystal_I2C(addr,cols
 void LCD::setup(){
   LCD::init();
   LCD::backlight();
+  LCD::createChar(0, delta);
   LCD::noCursor();
   LCD::noBlink();
   return;
@@ -57,10 +75,10 @@ void LCD::startup_screen(){
 }
 
 void LCD::gpslock_screen(int sats){
-  String output = "GPS: " + String(sats) + " sats";
   LCD::clear();
   LCD::setCursor(0, 0);
-  LCD::print(output);
+  LCD::print("Satellites: ");
+  LCD::print(sats);
   return;
 }
 
@@ -83,15 +101,16 @@ void LCD::standard_screen(int zero, int meas){
 void LCD::print_measurement(int zero, int meas, float x, float y, float z){
   LCD::standard_screen(zero,meas+1);
   LCD::setCursor(0, 1);
-  LCD::print("Measurement ");
+  LCD::print("Point ");
   LCD::print(zero);
   LCD::print(':');
   LCD::print(meas);
   LCD::setCursor(0, 2);
-  LCD::print("Relative elevation change: ");
+  LCD::printByte(0);
+  LCD::print("h: ");
   LCD::print(z);
   LCD::setCursor(0, 3);
-  LCD::print("Location: ");
+  LCD::print("At: ");
   LCD::print(x);
   LCD::print(',');
   LCD::print(y);  
