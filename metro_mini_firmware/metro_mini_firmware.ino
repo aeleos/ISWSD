@@ -14,6 +14,8 @@
     D10 CS, D11 MOSI, D12 MISO, D13 Clock, SPI for SD Card
     A3 Battery Voltage, connected to BAT pin on PowerBoost
     A4 Data, A5 Clock I2C for LCD, Altimeter
+
+    sudo chmod 777 /dev/ttyUSB0
 */
 
 
@@ -59,7 +61,11 @@ void setup()
   // Initialize the LCD, will call Wire.begin()
 
   lcd.setup();                      // initialize the lcd
-  lcd.startup_screen();
+  //lcd.startup_screen();
+  //    lcd.gpslock_screen(num_sats);/
+    lcd.standard_screen(0,2);
+    //lcd.print_measurement(0, 2, -42.567, -10.532, 35.62);
+    //lcd.print_battery(10);
 
   Serial.println("Done");
 
@@ -103,7 +109,7 @@ void setup()
 void loop()
 {
 
-  
+  lcd.progress_loop(1,1,1);
   unsigned long num_sats;
 
   num_sats = gps.satellites();
@@ -122,8 +128,6 @@ void loop()
     Serial.print("GPS has ");
     Serial.print(num_sats);
     Serial.println(" Satellites");
-//    lcd.gpslock_screen(num_sats);/
-    lcd.print_measurement(0, 0, 0, 0, 0);
   }
 
   sensors_event_t temp_event, pressure_event;
@@ -147,7 +151,7 @@ void loop()
     Serial.println();
   }
   
-  delay_and_read_gps(1000);
+  delay_and_read_gps(500);
 
 }
 

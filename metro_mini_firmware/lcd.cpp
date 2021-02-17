@@ -15,8 +15,20 @@ uint8_t delta[] = {
   0x0A,
   0x0A,
   0x11,
-  0x11,
-  0x1F
+  0x1F,
+  0x00
+};
+
+uint8_t backslash[] = {
+  0x00,
+  0x10,
+  0x08,
+  0x04,
+  0x02,
+  0x01,
+  0x00,
+  0x00
+
 };
 
 LCD::LCD(uint8_t addr, uint8_t cols, uint8_t rows) : LiquidCrystal_I2C(addr,cols,rows)
@@ -28,14 +40,18 @@ void LCD::setup(){
   LCD::init();
   LCD::backlight();
   LCD::createChar(0, delta);
+  LCD::createChar(1, backslash);
   LCD::noCursor();
   LCD::noBlink();
   return;
 }
 
 void LCD::print_battery(int percent){
+  if (percent < 100){
   LCD::setCursor(17,0); 
   LCD::print(percent);
+  LCD::print('%');
+  }
   return;
 }
 
@@ -51,7 +67,7 @@ void LCD::progress_loop(uint8_t col, uint8_t row, int loops){
     loop = '-';
   }
   else if (loop == '-') {
-    LCD::print('\\');
+    LCD::printByte(1);
     loop = '\\';
   }
   else if (loop == '\\') {
@@ -109,10 +125,11 @@ void LCD::print_measurement(int zero, int meas, float x, float y, float z){
   LCD::printByte(0);
   LCD::print("h: ");
   LCD::print(z);
+  LCD::print(" ft");
   LCD::setCursor(0, 3);
-  LCD::print("At: ");
+  LCD::print("At ");
   LCD::print(x);
-  LCD::print(',');
+  LCD::print(",");
   LCD::print(y);  
   return;
 }
