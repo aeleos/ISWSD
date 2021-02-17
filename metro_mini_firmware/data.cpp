@@ -7,8 +7,14 @@ Dataset::Dataset(uint8_t type, uint8_t zero){
 }
 
 void Dataset::setup(){
-//  Dataset::filename = String(zero) + ".csv\0";
-  
+  int i = zero % 10;
+  filename[1] = i+30;
+  (zero>99) ? filename[0] = int((zero-i)/10) : filename[0] = 0;
+  filename[2] = '.';
+  filename[3] = 'c';
+  filename[4] = 's';
+  filename[5] = 'v';
+  filename[6] = '\0';
   return;
 }
 

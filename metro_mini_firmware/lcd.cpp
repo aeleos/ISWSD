@@ -105,7 +105,7 @@ void LCD::zero_prompt_screen(){
   return;
 }
 
-void LCD::standard_screen(int zero, int meas){
+void LCD::standard_screen(uint8_t zero, uint8_t meas){
   LCD::clear();
   LCD::setCursor(0, 0);
   LCD::print(zero);
@@ -114,7 +114,7 @@ void LCD::standard_screen(int zero, int meas){
   return;
 }
 
-void LCD::print_measurement(int zero, int meas, float x, float y, float z){
+void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z){
   LCD::standard_screen(zero,meas+1);
   LCD::setCursor(0, 1);
   LCD::print("Point ");
@@ -134,7 +134,7 @@ void LCD::print_measurement(int zero, int meas, float x, float y, float z){
   return;
 }
 
-void LCD::print_zero(int zero, float x, float y){
+void LCD::print_zero(uint8_t zero, float x, float y){
   LCD::standard_screen(zero,0);
   LCD::setCursor(0, 1);
   LCD::print("Set zero point ");

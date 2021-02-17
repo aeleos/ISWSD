@@ -16,7 +16,7 @@ class Dataset
     uint8_t dp = 1; // datapoints taken
     uint8_t type,zero; // for constructor
     int zero_pressure; // pressure in hPa at the zero point
-    char filename[20]; // name to which to write, based on which zero number this is
+    char filename[7]; // name to which to write, based on which zero number this is
     float x_coordinate[50], y_coordinate[50]; // array of gps coordinates
     float measurements[50] = {0}; // elevation change
     
