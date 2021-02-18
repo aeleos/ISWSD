@@ -1,11 +1,10 @@
 #include "data.h"
 #include "Print.h"
 
-Dataset::Dataset(uint8_t zero){
-  this->zero = zero;
+Dataset::Dataset(){
 }
 
-void Dataset::setup(){
+void Dataset::setup(uint8_t zero){
   int i = zero % 10;
   filename[1] = i+30;
   (zero>99) ? filename[0] = int((zero-i)/10) : filename[0] = 0;
@@ -36,6 +35,6 @@ void Dataset::record_measurement(float x, float y, float meas){
   return;
 }
 
-DatasetC::DatasetC(uint8_t zero) : Dataset(zero){
+DatasetC::DatasetC(){
 
 }

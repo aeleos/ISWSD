@@ -7,15 +7,14 @@
 class Dataset
 {
   public:
-    Dataset(uint8_t zero); //start a new dataset object after every zero
-    void setup();
+    Dataset(); //start a new dataset object after every zero
+    void setup(uint8_t zero);
     void set_zero(float x, float y, float pressure);
     int get_zero_pressure(void);
     void record_measurement(float x, float y, float meas);
     void save_data();
   private:
-    uint8_t dp = 1; // datapoints taken
-    uint8_t zero; // for constructor
+    uint8_t dp = 1; // datapoint we are on
     int zero_pressure; // pressure in hPa at the zero point
     char filename[7]; // name to which to write, based on which zero number this is
     float x_coordinate[50], y_coordinate[50]; // array of gps coordinates
@@ -26,7 +25,7 @@ class Dataset
 class DatasetC : public Dataset
 {
   public:
-    DatasetC(uint8_t zero);
+    DatasetC();
     char custom_names[50][13]; // names set by custom     
 };
 
