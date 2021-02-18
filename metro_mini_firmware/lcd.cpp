@@ -136,7 +136,9 @@ void LCD::zero_max(uint8_t meas){
   LCD::setCursor(0, 1);
   LCD::print("SD card full.");
   LCD::setCursor(0, 2);
-  LCD::print("Remove data");
+  LCD::print("Data no longer stored.");
+  LCD::setCursor(0, 3);
+  LCD::print("Press to continue");
   return;
 }
 
