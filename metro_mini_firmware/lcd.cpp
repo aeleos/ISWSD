@@ -103,19 +103,31 @@ void LCD::gpslock_screen(int sats){
   return;
 }
 
-void LCD::zero_prompt_screen(){
+void LCD::zero_prompt_screen(char * custom = NULL){
   LCD::clear();
   LCD::setCursor(0, 0);
   LCD::print("Hold to zero.");
+  if (custom)
+  {
+  LCD::setCursor(0, 1);
+  LCD::print("Zero point: ");
+  LCD::print(*custom);
+  }
   return;
 }
 
-void LCD::standard_screen(uint8_t zero, uint8_t meas){
+void LCD::standard_screen(uint8_t zero, uint8_t meas, char * custom = NULL){
   LCD::clear();
   LCD::setCursor(0, 0);
   LCD::print(zero);
   LCD::print(':');
+  if (custom)
+  {
+  LCD::print(*custom);
+  }
+  else{
   LCD::print(meas);
+  }
   return;
 }
 
@@ -139,12 +151,12 @@ void LCD::datapoiont_max(uint8_t zero){
 }
 
 void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z){
-  LCD::standard_screen(zero,meas+1);
+  LCD::standard_screen(zero,meas);
   LCD::setCursor(0, 1);
   LCD::print("Point ");
   LCD::print(zero);
   LCD::print(':');
-  LCD::print(meas);
+  LCD::print(meas-1);
   LCD::setCursor(0, 2);
   LCD::printByte(0);
   LCD::print("h: ");
