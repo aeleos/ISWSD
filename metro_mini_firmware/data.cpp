@@ -1,9 +1,8 @@
 #include "data.h"
 #include "Print.h"
 
-Dataset::Dataset(uint8_t type, uint8_t zero){
-  Dataset::zero = zero;
-  Dataset::type = type;
+Dataset::Dataset(uint8_t zero){
+  this->zero = zero;
 }
 
 void Dataset::setup(){
@@ -19,20 +18,24 @@ void Dataset::setup(){
 }
 
 void Dataset::set_zero(float x, float y, float pressure){
-  Dataset::zero_pressure = pressure;
-  Dataset::x_coordinate[0] = x;
-  Dataset::y_coordinate[0] = y;
+  zero_pressure = pressure;
+  x_coordinate[0] = x;
+  y_coordinate[0] = y;
   return;
 }
 
 int Dataset::get_zero_pressure(void){
-  return Dataset::zero_pressure;
+  return zero_pressure;
 }
 
 void Dataset::record_measurement(float x, float y, float meas){
-  Dataset::x_coordinate[dp] = x;
-  Dataset::y_coordinate[dp] = y;
-  Dataset::measurements[dp] = meas * 3.28084;
+  x_coordinate[dp] = x;
+  y_coordinate[dp] = y;
+  measurements[dp] = meas * 3.28084;
   dp++;
   return;
+}
+
+DatasetC::DatasetC(uint8_t zero) : Dataset(zero){
+
 }
