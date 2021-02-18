@@ -62,10 +62,11 @@ void setup()
 
   lcd.setup();                      // initialize the lcd
   //lcd.startup_screen();
-  //    lcd.gpslock_screen(num_sats);/
-    lcd.standard_screen(0,2);
+  lcd.gpslock_screen(0);
+  lcd.top_bar(80,1);
+  //  lcd.standard_screen(0,2);
     //lcd.print_measurement(0, 2, -42.567, -10.532, 35.62);
-    //lcd.print_battery(10);
+    //lcd.print_battery(10,1);
 
   Serial.println("Done");
 
@@ -109,7 +110,6 @@ void setup()
 void loop()
 {
 
-  lcd.progress_loop(1,1,1);
   unsigned long num_sats;
 
   num_sats = gps.satellites();
@@ -150,8 +150,8 @@ void loop()
 
     Serial.println();
   }
-  
-  delay_and_read_gps(500);
+  lcd.progress_loop(13,0,1);
+  delay_and_read_gps(1000);
 
 }
 

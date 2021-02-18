@@ -12,6 +12,7 @@ class Dataset
     void set_zero(float x, float y, float pressure);
     int get_zero_pressure(void);
     void record_measurement(float x, float y, float meas);
+    void save_data();
   private:
     uint8_t dp = 1; // datapoints taken
     uint8_t type,zero; // for constructor

@@ -46,19 +46,24 @@ void LCD::setup(){
   return;
 }
 
-void LCD::print_battery(int percent){
-  if (percent < 100){
+void LCD::top_bar(uint8_t percent,bool card){
+  LCD::setCursor(15,0);
+  if (card) LCD::print("C ");
   LCD::setCursor(17,0); 
   LCD::print(percent);
+  if (percent < 100){
   LCD::print('%');
   }
   return;
 }
 
 void LCD::progress_loop(uint8_t col, uint8_t row, int loops){
-  if (loopcount < loops){
+  if (loopcount < loops-1){
     loopcount++;
     return;
+  }
+  if (loopcount >= loops){
+    loopcount=0;
   }
   else{
   LCD::setCursor(col,row);
@@ -93,7 +98,7 @@ void LCD::startup_screen(){
 void LCD::gpslock_screen(int sats){
   LCD::clear();
   LCD::setCursor(0, 0);
-  LCD::print("Satellites: ");
+  LCD::print("Satellites:");
   LCD::print(sats);
   return;
 }
@@ -114,6 +119,25 @@ void LCD::standard_screen(uint8_t zero, uint8_t meas){
   return;
 }
 
+void LCD::zero_max(uint8_t meas){
+  LCD::standard_screen(99,meas);
+  LCD::setCursor(0, 1);
+  LCD::print("SD card full.");
+  LCD::setCursor(0, 2);
+  LCD::print("Remove data");
+  return;
+}
+
+
+void LCD::datapoiont_max(uint8_t zero){
+  LCD::standard_screen(zero,49);
+  LCD::setCursor(0, 1);
+  LCD::print("Data point limit.");
+  LCD::setCursor(0, 2);
+  LCD::print("Hold to zero.");
+  return;
+}
+
 void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z){
   LCD::standard_screen(zero,meas+1);
   LCD::setCursor(0, 1);
@@ -125,7 +149,7 @@ void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float 
   LCD::printByte(0);
   LCD::print("h: ");
   LCD::print(z);
-  LCD::print(" ft");
+  LCD::print("ft");
   LCD::setCursor(0, 3);
   LCD::print("At ");
   LCD::print(x);
