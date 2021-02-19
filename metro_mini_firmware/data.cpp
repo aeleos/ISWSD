@@ -1,7 +1,8 @@
 #include "data.h"
 #include "Print.h"
 
-Dataset::Dataset(){
+Dataset::Dataset(uint8_t zero){
+  Dataset::setup(zero);
 }
 
 void Dataset::setup(uint8_t zero){
@@ -35,6 +36,6 @@ void Dataset::record_measurement(float x, float y, float meas){
   return;
 }
 
-DatasetC::DatasetC(){
+DatasetC::DatasetC(uint8_t zero) : Dataset(zero){
 
 }

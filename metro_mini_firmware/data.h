@@ -7,7 +7,7 @@
 class Dataset
 {
   public:
-    Dataset(); //start a new dataset object after every zero
+    Dataset(uint8_t zero); //start a new dataset object after every zero
     void setup(uint8_t zero);
     void set_zero(float x, float y, float pressure);
     int get_zero_pressure(void);
@@ -25,7 +25,7 @@ class Dataset
 class DatasetC : public Dataset
 {
   public:
-    DatasetC();
+    DatasetC(uint8_t zero);
     char custom_names[50][13]; // names set by custom     
 };
 
