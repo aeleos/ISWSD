@@ -109,8 +109,6 @@ void setup()
 
 
   Serial.println("Initializing Done");
-  bool card = 0; // is the sd card present
-
 
 }
 
@@ -119,6 +117,7 @@ void loop()
 {
 
  float voltage = (float)analogRead(BAT_PIN) * 5.0/1024.0;
+ bool card = 0; // is the sd card present
   Serial.println(voltage);
 
 
