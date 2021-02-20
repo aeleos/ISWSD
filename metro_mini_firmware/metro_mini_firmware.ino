@@ -47,6 +47,15 @@ SoftwareSerial gps_ss(7, 8);
 // GPS Object
 TinyGPS gps;
 
+int voltage_to_percent(float volt){
+  int percent = int((4.2-2.8)*72.4286);
+  if (percent > 100)
+    percent = 100;
+    if (percent < 00)
+    percent = 00;
+  return percent;
+}
+
 void setup()
 {
 
@@ -100,7 +109,7 @@ void setup()
 
 
   Serial.println("Initializing Done");
-
+  bool card = 0; // is the sd card present
 
 
 }
@@ -128,7 +137,7 @@ void loop()
   Serial.println(failed);
 
   lcd.gpslock_screen(num_sats, TinyGPS::GPS_INVALID_SATELLITES);
-  lcd.top_bar(voltage);
+  lcd.top_bar(voltage_to_percent(voltage),card);
   
   if (num_sats == TinyGPS::GPS_INVALID_SATELLITES) {
     Serial.println("GPS has no lock");
