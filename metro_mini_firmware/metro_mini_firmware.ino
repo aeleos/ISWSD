@@ -40,7 +40,7 @@ Adafruit_Sensor *dps_pressure = dps.getPressureSensor();
 LCD lcd(0x27, 20, 4); // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 #define GPS_BAUD 9600
-
+#define BAT_PIN 3
 // Software Serial Object for GPS, (rx, tx)
 SoftwareSerial gps_ss(7, 8);
 
@@ -62,8 +62,7 @@ void setup()
 
   lcd.setup();                      // initialize the lcd
   //lcd.startup_screen();
-  lcd.gpslock_screen(0);
-  lcd.top_bar(80,1);
+
   //  lcd.standard_screen(0,2);
     //lcd.print_measurement(0, 2, -42.567, -10.532, 35.62);
     //lcd.print_battery(10,1);
@@ -110,6 +109,10 @@ void setup()
 void loop()
 {
 
+ float voltage = (float)analogRead(BAT_PIN) * 5.0/1024.0;
+  Serial.println(voltage);
+
+
   unsigned long num_sats;
 
   num_sats = gps.satellites();
@@ -118,10 +121,15 @@ void loop()
 
   gps.stats(&chars, &sentences, &failed);
 
+
+
   Serial.println(chars);
   Serial.println(sentences);
   Serial.println(failed);
 
+  lcd.gpslock_screen(num_sats, TinyGPS::GPS_INVALID_SATELLITES);
+  lcd.top_bar(voltage);
+  
   if (num_sats == TinyGPS::GPS_INVALID_SATELLITES) {
     Serial.println("GPS has no lock");
   } else {

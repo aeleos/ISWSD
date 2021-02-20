@@ -31,12 +31,12 @@ uint8_t backslash[] = {
 
 };
 
-LCD::LCD(uint8_t addr, uint8_t cols, uint8_t rows) : LiquidCrystal_I2C(addr,cols,rows)
+LCD::LCD(uint8_t addr, uint8_t cols, uint8_t rows) : LiquidCrystal_I2C(addr, cols, rows)
 {
-  
+
 }
 
-void LCD::setup(){
+void LCD::setup() {
   LCD::init();
   LCD::backlight();
   LCD::createChar(0, delta);
@@ -46,93 +46,98 @@ void LCD::setup(){
   return;
 }
 
-void LCD::top_bar(uint8_t percent,bool card){
-  LCD::setCursor(15,0);
-  if (card) LCD::print("C ");
-  LCD::setCursor(17,0); 
-  LCD::print(percent);
-  if (percent < 100){
-  LCD::print('%');
+void LCD::top_bar(float voltage) {
+  LCD::setCursor(0, 0);
+  LCD::print("ISWSD Running");
+  LCD::setCursor(15, 0);
+
+  LCD::print(voltage);
+  if (voltage < 100) {
+    LCD::print('V');
   }
   return;
 }
 
-void LCD::progress_loop(uint8_t col, uint8_t row, int loops){
-  if (loopcount < loops-1){
+void LCD::progress_loop(uint8_t col, uint8_t row, int loops) {
+  if (loopcount < loops - 1) {
     loopcount++;
     return;
   }
-  if (loopcount >= loops){
-    loopcount=0;
+  if (loopcount >= loops) {
+    loopcount = 0;
   }
-  else{
-  LCD::setCursor(col,row);
-  if (loop == '/') {
-    LCD::print('-');
-    loop = '-';
-  }
-  else if (loop == '-') {
-    LCD::printByte(1);
-    loop = '\\';
-  }
-  else if (loop == '\\') {
-    LCD::print('|');
-    loop = '|';
-  }
-  else{
-    LCD::print('/');
-    loop = '/';
-  }
-  loopcount = 0;
-  return;
+  else {
+    LCD::setCursor(col, row);
+    if (loop == '/') {
+      LCD::print('-');
+      loop = '-';
+    }
+    else if (loop == '-') {
+      LCD::printByte(1);
+      loop = '\\';
+    }
+    else if (loop == '\\') {
+      LCD::print('|');
+      loop = '|';
+    }
+    else {
+      LCD::print('/');
+      loop = '/';
+    }
+    loopcount = 0;
+    return;
   }
 }
 
-void LCD::startup_screen(){
+void LCD::startup_screen() {
   LCD::clear();
   LCD::setCursor(0, 0);
   LCD::print("System startup");
   return;
 }
 
-void LCD::gpslock_screen(int sats){
+void LCD::gpslock_screen(int sats, int invalid_sats) {
   LCD::clear();
-  LCD::setCursor(0, 0);
+  LCD::setCursor(0, 1);
   LCD::print("Satellites:");
-  LCD::print(sats);
+  if (sats == invalid_sats) {
+    LCD::print("No Lock");
+  } else {
+    LCD::print(sats);
+  }
   return;
 }
 
-void LCD::zero_prompt_screen(char * custom = NULL){
+void LCD::zero_prompt_screen(char * custom = NULL) {
   LCD::clear();
   LCD::setCursor(0, 0);
   LCD::print("Hold to zero.");
   if (custom)
   {
-  LCD::setCursor(0, 1);
-  LCD::print("Zero point: ");
-  LCD::print(*custom);
+    LCD::setCursor(0, 1);
+    LCD::print("Zero point: ");
+    LCD::print(*custom);
   }
   return;
 }
 
-void LCD::standard_screen(uint8_t zero, uint8_t meas, char * custom = NULL){
+void LCD::standard_screen(uint8_t zero, uint8_t meas, char * custom = NULL) {
   LCD::clear();
   LCD::setCursor(0, 0);
   LCD::print(zero);
   LCD::print(':');
   if (custom)
   {
-  LCD::print(*custom);
+    LCD::print(*custom);
   }
-  else{
-  LCD::print(meas);
+  else {
+    LCD::print(meas);
   }
   return;
 }
 
-void LCD::zero_max(uint8_t meas){
-  LCD::standard_screen(99,meas);
+void LCD::zero_max(uint8_t meas) {
+  LCD::standard_screen(99, meas);
   LCD::setCursor(0, 1);
   LCD::print("SD card full.");
   LCD::setCursor(0, 2);
@@ -143,8 +148,8 @@ void LCD::zero_max(uint8_t meas){
 }
 
 
-void LCD::datapoiont_max(uint8_t zero){
-  LCD::standard_screen(zero,49);
+void LCD::datapoiont_max(uint8_t zero) {
+  LCD::standard_screen(zero, 49);
   LCD::setCursor(0, 1);
   LCD::print("Data point limit.");
   LCD::setCursor(0, 2);
@@ -152,13 +157,13 @@ void LCD::datapoiont_max(uint8_t zero){
   return;
 }
 
-void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z){
-  LCD::standard_screen(zero,meas);
+void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z) {
+  LCD::standard_screen(zero, meas);
   LCD::setCursor(0, 1);
   LCD::print("Point ");
   LCD::print(zero);
   LCD::print(':');
-  LCD::print(meas-1);
+  LCD::print(meas - 1);
   LCD::setCursor(0, 2);
   LCD::printByte(0);
   LCD::print("h: ");
@@ -168,12 +173,12 @@ void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float 
   LCD::print("At ");
   LCD::print(x);
   LCD::print(",");
-  LCD::print(y);  
+  LCD::print(y);
   return;
 }
 
-void LCD::print_zero(uint8_t zero, float x, float y){
-  LCD::standard_screen(zero,0);
+void LCD::print_zero(uint8_t zero, float x, float y) {
+  LCD::standard_screen(zero, 0);
   LCD::setCursor(0, 1);
   LCD::print("Set zero point ");
   LCD::print(zero);
@@ -181,6 +186,6 @@ void LCD::print_zero(uint8_t zero, float x, float y){
   LCD::print("Location: ");
   LCD::print(x);
   LCD::print(',');
-  LCD::print(y);  
+  LCD::print(y);
   return;
 }
