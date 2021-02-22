@@ -36,7 +36,3 @@ void Dataset::record_measurement(float x, float y, float meas){
   dp++;
   return;
 }
-
-DatasetC::DatasetC(uint8_t zero) : Dataset(zero){
-  filename[0] = 'C';
-}

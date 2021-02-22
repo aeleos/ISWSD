@@ -3,6 +3,15 @@
 
 #include <inttypes.h>
 
+struct datetime {
+  uint16_t year;
+  uint8_t month;
+  uint8_t day;
+  uint8_t hour;
+  uint8_t minute;
+  uint8_t second;
+} ;
+
 //  Dataset for non-custom use
 class Dataset
 {
@@ -19,14 +28,8 @@ class Dataset
     int zero_pressure; // pressure in hPa at the zero point
     float x_coordinate[50], y_coordinate[50]; // array of gps coordinates
     float measurements[50] = {0}; // elevation change
+    datetime moments[50];
     
-};
-
-class DatasetC : public Dataset
-{
-  public:
-    DatasetC(uint8_t zero);
-    char custom_names[50][13]; // names set by custom     
 };
 
 #endif
