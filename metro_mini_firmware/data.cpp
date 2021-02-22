@@ -1,20 +1,11 @@
 #include "data.h"
 #include "Print.h"
 
-Dataset::Dataset(uint8_t zero){
-  Dataset::name_file(zero);
-}
-
-void Dataset::name_file(uint8_t zero){
+void Dataset::name_file(uint8_t zero, bool custom){
   int i = zero % 10;
   filename[2] = i+30;
   (zero>99) ? filename[1] = int((zero-i)/10) : filename[1] = 0;
-  filename[3] = '.';
-  filename[4] = 'c';
-  filename[5] = 's';
-  filename[6] = 'v';
-  filename[7] = '\0';
-  filename[0] = 'F';
+  (custom) ? filename[0] = 'C' : filename[0] = 'F';
   return;
 }
 
@@ -22,6 +13,7 @@ void Dataset::set_zero(float x, float y, float pressure){
   zero_pressure = pressure;
   x_coordinate[0] = x;
   y_coordinate[0] = y;
+  dp = 1;
   return;
 }
 

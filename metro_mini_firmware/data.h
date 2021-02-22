@@ -16,13 +16,11 @@ struct datetime {
 class Dataset
 {
   public:
-    Dataset(uint8_t zero); //start a new dataset object after every zero
-    void name_file(uint8_t zero);
+    void name_file(uint8_t zero, bool custom);
     void set_zero(float x, float y, float pressure);
     int get_zero_pressure(void);
     void record_measurement(float x, float y, float meas);
-    void save_data();
-    char filename[8]; // name to which to write, based on which zero number this is
+    char filename[8] = "XXX.csv"; // name to which to write, based on which zero number this is
   private:
     uint8_t dp = 1; // datapoint we are on
     int zero_pressure; // pressure in hPa at the zero point
