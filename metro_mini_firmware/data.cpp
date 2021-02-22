@@ -2,18 +2,19 @@
 #include "Print.h"
 
 Dataset::Dataset(uint8_t zero){
-  Dataset::setup(zero);
+  Dataset::name_file(zero);
 }
 
-void Dataset::setup(uint8_t zero){
+void Dataset::name_file(uint8_t zero){
   int i = zero % 10;
-  filename[1] = i+30;
-  (zero>99) ? filename[0] = int((zero-i)/10) : filename[0] = 0;
-  filename[2] = '.';
-  filename[3] = 'c';
-  filename[4] = 's';
-  filename[5] = 'v';
-  filename[6] = '\0';
+  filename[2] = i+30;
+  (zero>99) ? filename[1] = int((zero-i)/10) : filename[1] = 0;
+  filename[3] = '.';
+  filename[4] = 'c';
+  filename[5] = 's';
+  filename[6] = 'v';
+  filename[7] = '\0';
+  filename[0] = 'F';
   return;
 }
 
@@ -37,5 +38,5 @@ void Dataset::record_measurement(float x, float y, float meas){
 }
 
 DatasetC::DatasetC(uint8_t zero) : Dataset(zero){
-
+  filename[0] = 'C';
 }
