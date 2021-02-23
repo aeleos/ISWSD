@@ -63,9 +63,9 @@ void setup()
   Serial.begin(115200);
   while (!Serial) delay(10);
 
-  Serial.println("USB Serial Interface started");
+  Serial.println(F("USB SI started..."));
 
-  Serial.print("Initializing LCD Display... ");
+  Serial.print(F("LCD init... "));
 
   // Initialize the LCD, will call Wire.begin()
 
@@ -76,30 +76,30 @@ void setup()
     //lcd.print_measurement(0, 2, -42.567, -10.532, 35.62);
     //lcd.print_battery(10,1);
 
-  Serial.println("Done");
+  Serial.println(F("Done"));
 
   // Initialize GPS Software Serial
-  Serial.print("Initializing GPS Software Serial... ");
+  Serial.print(F("GPS init... "));
   gps_ss.begin(GPS_BAUD);
-  Serial.println("Done");
+  Serial.println(F("Done"));
 
 
   // Initialize Adafruit DPS310
 
-  Serial.print("Initializing DPS310 Pressure... ");
+  Serial.print(F("DPS310 init... "));
   if (! dps.begin_I2C(DPS310_I2CADDR_DEFAULT, &Wire)) {
     Serial.print(" ... ");
 //    while (1) y/ield();
   }
-  Serial.print("Configuring... ");
+  Serial.print(F("Config... "));
 
   // Setup highest precision
   dps.configurePressure(DPS310_64HZ, DPS310_64SAMPLES);
   dps.configureTemperature(DPS310_64HZ, DPS310_64SAMPLES);
 
-  Serial.println("Done");
+  Serial.println(("Done"));
 
-  Serial.println("Printing Sensor Details");
+  Serial.println(("Sensor Details"));
 
   dps_temp->printSensorDetails();
   dps_pressure->printSensorDetails();
@@ -108,7 +108,7 @@ void setup()
 
 
 
-  Serial.println("Initializing Done");
+  Serial.println(("Init. Done"));
 
 }
 
@@ -139,20 +139,20 @@ void loop()
   lcd.top_bar(voltage_to_percent(voltage),card);
   
   if (num_sats == TinyGPS::GPS_INVALID_SATELLITES) {
-    Serial.println("GPS has no lock");
+    Serial.println(F("GPS has no lock"));
   } else {
-    Serial.print("GPS has ");
+    Serial.print(("GPS: "));
     Serial.print(num_sats);
-    Serial.println(" Satellites");
+    Serial.println((" Sats"));
   }
 
   sensors_event_t temp_event, pressure_event;
 
   if (dps.temperatureAvailable()) {
     dps_temp->getEvent(&temp_event);
-    Serial.print(F("Temperature = "));
+    Serial.print(F("Temp = "));
     Serial.print(temp_event.temperature);
-    Serial.println(" *C");
+    Serial.println(F(" *C"));
     Serial.println();
   }
 
@@ -160,9 +160,9 @@ void loop()
   // before temp!
   if (dps.pressureAvailable()) {
     dps_pressure->getEvent(&pressure_event);
-    Serial.print(F("Pressure = "));
+    Serial.print(F("Pres. = "));
     Serial.print(pressure_event.pressure);
-    Serial.println(" hPa");
+    Serial.println(F(" hPa"));
 
     Serial.println();
   }

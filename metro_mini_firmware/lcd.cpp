@@ -48,11 +48,11 @@ void LCD::setup(){
 
 void LCD::top_bar(uint8_t percent,bool card){
   LCD::setCursor(15,0);
-  if (card) LCD::print("C");
+  if (card) LCD::print(F("C"));
   LCD::setCursor(17,0); 
   LCD::print(percent);
   if (percent < 100){
-  LCD::print('%');
+  LCD::print(F("%"));
   }
   return;
 }
@@ -91,18 +91,18 @@ void LCD::progress_loop(uint8_t col, uint8_t row, int loops){
 void LCD::startup_screen(){
   LCD::clear();
   LCD::setCursor(0, 0);
-  LCD::print("System startup");
+  LCD::print(F("System startup"));
   return;
 }
 
 void LCD::gpslock_screen(int sats,int invalid_sats){
   LCD::clear();
   LCD::setCursor(0, 0);
-  LCD::print("GPS Search");
+  LCD::print(F("GPS Search"));
   LCD::setCursor(0, 0);
-  LCD::print("Satellites: ");
+  LCD::print(F("Satellites: "));
   if (sats == invalid_sats) {
-    LCD::print("No Lock");
+    LCD::print(F("No Lock"));
   } else {
     LCD::print(sats);
   }
@@ -112,11 +112,11 @@ void LCD::gpslock_screen(int sats,int invalid_sats){
 void LCD::zero_prompt_screen(char * custom = NULL){
   LCD::clear();
   LCD::setCursor(0, 0);
-  LCD::print("Hold to zero.");
+  LCD::print(F("Hold to zero."));
   if (custom)
   {
   LCD::setCursor(0, 1);
-  LCD::print("Zero point: ");
+  LCD::print(F("Zero point: "));
   LCD::print(*custom);
   }
   return;
@@ -126,7 +126,7 @@ void LCD::standard_screen(uint8_t zero, uint8_t meas, char * custom = NULL){
   LCD::clear();
   LCD::setCursor(0, 0);
   LCD::print(zero);
-  LCD::print(':');
+  LCD::print(F(":"));
   if (custom)
   {
   LCD::print(*custom);
@@ -140,11 +140,11 @@ void LCD::standard_screen(uint8_t zero, uint8_t meas, char * custom = NULL){
 void LCD::zero_max(uint8_t meas){
   LCD::standard_screen(99,meas);
   LCD::setCursor(0, 1);
-  LCD::print("SD card full.");
+  LCD::print(F("SD card full."));
   LCD::setCursor(0, 2);
-  LCD::print("Data no longer stored.");
+  LCD::print(F("Data no longer stored."));
   LCD::setCursor(0, 3);
-  LCD::print("Press to continue");
+  LCD::print(F("Press to continue"));
   return;
 }
 
@@ -152,28 +152,28 @@ void LCD::zero_max(uint8_t meas){
 void LCD::datapoiont_max(uint8_t zero){
   LCD::standard_screen(zero,49);
   LCD::setCursor(0, 1);
-  LCD::print("Data point limit.");
+  LCD::print(F("Data point limit."));
   LCD::setCursor(0, 2);
-  LCD::print("Hold to zero.");
+  LCD::print(F("Hold to zero."));
   return;
 }
 
 void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z){
   LCD::standard_screen(zero,meas);
   LCD::setCursor(0, 1);
-  LCD::print("Point ");
+  LCD::print(F("Point "));
   LCD::print(zero);
-  LCD::print(':');
+  LCD::print(F(":"));
   LCD::print(meas-1);
   LCD::setCursor(0, 2);
   LCD::printByte(0);
-  LCD::print("h: ");
+  LCD::print(F("h: "));
   LCD::print(z);
-  LCD::print("ft");
+  LCD::print(F("ft"));
   LCD::setCursor(0, 3);
-  LCD::print("At ");
+  LCD::print(F("At "));
   LCD::print(x);
-  LCD::print(",");
+  LCD::print(F(","));
   LCD::print(y);  
   return;
 }
@@ -181,12 +181,12 @@ void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float 
 void LCD::print_zero(uint8_t zero, float x, float y){
   LCD::standard_screen(zero,0);
   LCD::setCursor(0, 1);
-  LCD::print("Set zero point ");
+  LCD::print(F("Set zero point "));
   LCD::print(zero);
   LCD::setCursor(0, 2);
-  LCD::print("Location: ");
+  LCD::print(F("Location: "));
   LCD::print(x);
-  LCD::print(',');
+  LCD::print(F(","));
   LCD::print(y);  
   return;
 }
