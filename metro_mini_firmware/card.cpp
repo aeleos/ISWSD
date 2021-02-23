@@ -28,23 +28,23 @@ bool Card::get_files(){
   }
 }
 
-uint8_t Card::get_custom_locations(){
-  File custom;
+uint8_t Card::get_custom_locations(File custom){
   char ch;
   uint8_t r = 0,c = 0;
   
   custom = open("cust.txt");
   while (custom.available()) {
-    ch = 0;
+    ch = custom.read();
     while (ch != '\n'){
-        ch = custom.read();
         custom_names[r][c] = ch;
         c++;
+        ch = custom.read();
     }
     c = 0;
     r++;
     }
-  return r;
+  custom.close();
+  return r+1;
 }
 
 void Card::log_data(Dataset data){
