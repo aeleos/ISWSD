@@ -51,9 +51,17 @@ uint8_t Card::get_custom_locations(){
 void Card::log_data(Dataset data){
   File myFile = open(data.filename, FILE_WRITE);
   for (uint8_t d=0;d < data.dp;d++){
-    String datastring = String(data.moments[d].year) + "-" + String(data.moments[d].month) + "-"  + String(data.moments[d].day) + ",";
-    datastring = datastring + String(data.x_coordinate[d]) + "," + String(data.y_coordinate[d]) + "," + String(data.measurements[d]) + "\n";
-    myFile.println(datastring);
+    myFile.print(data.moments[d].year);
+    myFile.print('-');
+    myFile.print(data.moments[d].month);
+    myFile.print('-');
+    myFile.print(data.moments[d].day);
+    myFile.print(',');
+    myFile.print(data.x_coordinate[d]);
+    myFile.print(',');
+    myFile.print(data.y_coordinate[d]);
+    myFile.print(',');
+    myFile.println(data.measurements[d]);
   }
   
   myFile.close();
