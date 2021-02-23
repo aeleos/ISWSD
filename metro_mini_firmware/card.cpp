@@ -28,10 +28,11 @@ bool Card::get_files(){
   }
 }
 
-uint8_t Card::get_custom_locations(File custom){
+uint8_t Card::get_custom_locations(){
   char ch;
   uint8_t r = 0,c = 0;
-  
+
+  File custom;
   custom = open("cust.txt");
   while (custom.available()) {
     ch = custom.read();
