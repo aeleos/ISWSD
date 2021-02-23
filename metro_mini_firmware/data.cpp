@@ -10,6 +10,11 @@ void Dataset::name_file(uint8_t zero, bool custom){
   return;
 }
 
+void Dataset::reset(){
+  read_to_character = 0;
+  return;
+}
+
 void Dataset::set_zero(float x, float y, float pressure,  uint16_t year, uint8_t month, uint8_t day){
   zero_hPa = pressure;
   record_measurement(x,y,0.0,year,month,day);
@@ -55,28 +60,32 @@ bool Dataset::get_files(){
     if (entry.name() == "cust.txt") {
       custom = 1;
       file_number--;
-      get_custom_locations();
       }
     entry.close();
   }
 }
 
-uint8_t Dataset::get_custom_locations(){
+uint8_t Dataset::get_custom_location(){
   char ch;
-  uint8_t r = 0,c = 0;
+  uint8_t c = 0;
+  uint16_t place = 0; 
+  bool av = 0;
 
   File custom;
   custom = open(F("cust.txt"));
-  while (custom.available()) {
+  while (custom.available() && place < read_to_character) {
     ch = custom.read();
-    while (ch != '\n'){
-        custom_names[r][c] = ch;
+  }
+  ch = custom.read();
+  while (custom.available() && ch != '\n'){
+        av = 1;
+        custom_name[c] = ch;
         c++;
+        place++;
         ch = custom.read();
     }
-    c = 0;
-    r++;
-    }
+  read_to_character = place+1;
+  custom_name[c] = '\0';
   custom.close();
-  return r+1;
+  return av;
 }
