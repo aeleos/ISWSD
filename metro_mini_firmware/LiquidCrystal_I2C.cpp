@@ -206,11 +206,11 @@ void LiquidCrystal_I2C::noAutoscroll(void) {
 
 // Allows us to fill the first 8 CGRAM locations
 // with custom characters
-void LiquidCrystal_I2C::createChar(uint8_t location, uint8_t charmap[]) {
+void LiquidCrystal_I2C::createChar(uint8_t location, const uint8_t * charmap) {
 	location &= 0x7; // we only have 8 locations 0-7
 	command(LCD_SETCGRAMADDR | (location << 3));
 	for (int i=0; i<8; i++) {
-		write(charmap[i]);
+		write(pgm_read_byte(&charmap[i]));
 	}
 }
 
@@ -282,9 +282,12 @@ void LiquidCrystal_I2C::blink_off(){
 	noBlink();
 }
 
+/*
 void LiquidCrystal_I2C::load_custom_character(uint8_t char_num, uint8_t *rows){
 		createChar(char_num, rows);
 }
+
+*/
 
 void LiquidCrystal_I2C::setBacklight(uint8_t new_val){
 	if(new_val){

@@ -8,7 +8,7 @@
 #define printByte(args)  print(args,BYTE);
 #endif
 
-uint8_t delta[] = {
+const PROGMEM uint8_t delta[] = {
   0x04,
   0x04,
   0x0A,
@@ -19,7 +19,7 @@ uint8_t delta[] = {
   0x00
 };
 
-uint8_t backslash[] = {
+const PROGMEM uint8_t backslash[] = {
   0x00,
   0x10,
   0x08,

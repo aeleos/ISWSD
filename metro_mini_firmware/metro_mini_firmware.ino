@@ -30,6 +30,7 @@
 #include <SoftwareSerial.h>
 #include <TinyGPS.h>
 #include "lcd.h"
+#include <inttypes.h>
 
 // Pressure Sensor Object
 Adafruit_DPS310 dps;
@@ -41,18 +42,22 @@ LCD lcd(0x27, 20, 4); // set the LCD address to 0x27 for a 16 chars and 2 line d
 
 #define GPS_BAUD 9600
 #define BAT_PIN 3
+
+// Battery Conversion Constants
+
+const PROGMEM float MAX_VOLT = 4.2;
+const PROGMEM float MIN_VOLT = 2.8;
+const PROGMEM float SCALE_VOLT = 72.4286;
 // Software Serial Object for GPS, (rx, tx)
 SoftwareSerial gps_ss(7, 8);
 
 // GPS Object
 TinyGPS gps;
 
-int voltage_to_percent(float volt){
-  int percent = int((4.2-2.8)*72.4286);
+uint8_t voltage_to_percent(float volt){
+  uint8_t percent = int((pgm_read_byte(&MAX_VOLT)-pgm_read_byte(&MIN_VOLT))*pgm_read_byte(&SCALE_VOLT));
   if (percent > 100)
     percent = 100;
-    if (percent < 00)
-    percent = 00;
   return percent;
 }
 
@@ -121,11 +126,11 @@ void loop()
   Serial.println(voltage);
 
 
-  unsigned long num_sats;
+  uint8_t num_sats;
 
   num_sats = gps.satellites();
   unsigned long age, date, time, chars = 0;
-  unsigned short sentences = 0, failed = 0;
+  short unsigned int sentences = 0, failed = 0;
 
   gps.stats(&chars, &sentences, &failed);
 
