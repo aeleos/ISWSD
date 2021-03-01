@@ -15,9 +15,9 @@ void Dataset::reset(){
   return;
 }
 
-void Dataset::set_zero(float x, float y, float pressure,  uint16_t year, uint8_t month, uint8_t day){
+void Dataset::set_zero(float x, float y, float pressure,  struct date dt){
   zero_hPa = pressure;
-  record_measurement(x,y,0.0,year,month,day);
+  record_measurement(x,y,0.0,dt);
   return;
 }
 
@@ -25,13 +25,13 @@ float Dataset::get_zero_pressure(void){
   return zero_hPa;
 }
 
-void Dataset::record_measurement(float x, float y, float meas, uint16_t year, uint8_t month, uint8_t day){
+void Dataset::record_measurement(float x, float y, float meas, struct date dt){
     File myFile = open(filename, FILE_WRITE);
-    myFile.print(year);
+    myFile.print(dt.y);
     myFile.print('-');
-    myFile.print(month);
+    myFile.print(dt.m);
     myFile.print('-');
-    myFile.print(day);
+    myFile.print(dt.d);
     myFile.print(',');
     myFile.print(x);
     myFile.print(',');

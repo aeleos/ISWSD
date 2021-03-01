@@ -8,6 +8,21 @@
 #define printByte(args)  print(args,BYTE);
 #endif
 
+const PROGMEM uint16_t MAX_VOLT = 880;
+const PROGMEM uint16_t  MIN_VOLT = 574;
+const PROGMEM float SCALE_VOLT = 0.3267973856209;
+
+uint8_t voltage_to_percent(uint16_t volt){
+  uint8_t percent;
+  if (volt > (pgm_read_byte(&MAX_VOLT))){
+    percent = 100;
+  }
+  else{
+    percent = (uint8_t)(volt-(pgm_read_byte(&MIN_VOLT)) * (pgm_read_byte(&SCALE_VOLT)));
+  }
+  return percent;
+}
+
 const PROGMEM uint8_t delta[] = {
   0x04,
   0x04,
@@ -46,7 +61,8 @@ void LCD::setup(){
   return;
 }
 
-void LCD::top_bar(uint8_t percent,bool card){
+void LCD::top_bar(uint16_t volt,bool card){
+  uint8_t percent = voltage_to_percent(volt);
   LCD::setCursor(15,0);
   if (card) LCD::print(F("C"));
   LCD::setCursor(17,0); 

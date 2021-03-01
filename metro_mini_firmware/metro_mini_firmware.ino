@@ -43,27 +43,14 @@ LCD lcd(0x27, 20, 4); // set the LCD address to 0x27 for a 16 chars and 2 line d
 #define GPS_BAUD 9600
 #define BAT_PIN 3
 
-// Battery Conversion Constants
-
-const PROGMEM float MAX_VOLT = 4.2;
-const PROGMEM float MIN_VOLT = 2.8;
-const PROGMEM float SCALE_VOLT = 72.4286;
 // Software Serial Object for GPS, (rx, tx)
 SoftwareSerial gps_ss(7, 8);
 
 // GPS Object
 TinyGPS gps;
 
-uint8_t voltage_to_percent(float volt){
-  uint8_t percent = int((pgm_read_byte(&MAX_VOLT)-pgm_read_byte(&MIN_VOLT))*pgm_read_byte(&SCALE_VOLT));
-  if (percent > 100)
-    percent = 100;
-  return percent;
-}
-
 void setup()
 {
-
   // Startup Serial
   Serial.begin(115200);
   while (!Serial) delay(10);
@@ -102,9 +89,9 @@ void setup()
   dps.configurePressure(DPS310_64HZ, DPS310_64SAMPLES);
   dps.configureTemperature(DPS310_64HZ, DPS310_64SAMPLES);
 
-  Serial.println(("Done"));
+  Serial.println(F("Done"));
 
-  Serial.println(("Sensor Details"));
+  Serial.println(F("Sensor Details"));
 
   dps_temp->printSensorDetails();
   dps_pressure->printSensorDetails();
@@ -113,7 +100,7 @@ void setup()
 
 
 
-  Serial.println(("Init. Done"));
+  Serial.println(F("Init. Done"));
 
 }
 
@@ -121,8 +108,9 @@ void setup()
 void loop()
 {
 
- float voltage = (float)analogRead(BAT_PIN) * 5.0/1024.0;
- bool card = 0; // is the sd card present
+// float voltage = (float)analogRead(BAT_PIN); // * 5.0/1024.0; for actual voltage
+uint16_t voltage = (uint16_t)analogRead(BAT_PIN);
+bool card = 0; // is the sd card present
   Serial.println(voltage);
 
 
@@ -141,14 +129,14 @@ void loop()
   Serial.println(failed);
 
   lcd.gpslock_screen(num_sats, TinyGPS::GPS_INVALID_SATELLITES);
-  lcd.top_bar(voltage_to_percent(voltage),card);
+  lcd.top_bar(voltage,card);
   
   if (num_sats == TinyGPS::GPS_INVALID_SATELLITES) {
     Serial.println(F("GPS has no lock"));
   } else {
-    Serial.print(("GPS: "));
+    Serial.print(F("GPS: "));
     Serial.print(num_sats);
-    Serial.println((" Sats"));
+    Serial.println(F(" Sats"));
   }
 
   sensors_event_t temp_event, pressure_event;
