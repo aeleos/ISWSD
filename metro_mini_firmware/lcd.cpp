@@ -115,7 +115,7 @@ void LCD::startup_screen(){
   return;
 }
 
-void LCD::gpslock_screen(int sats,int invalid_sats){
+bool LCD::gpslock_screen(int sats,int invalid_sats){
   LCD::clear();
   LCD::setCursor(0, 0);
   LCD::print(F("GPS Search"));
@@ -126,7 +126,7 @@ void LCD::gpslock_screen(int sats,int invalid_sats){
   } else {
     LCD::print(sats);
   }
-  return;
+  return (bool)!digitalRead(YES_PIN);
 }
 
 void LCD::zero_prompt_screen(char * custom){
@@ -165,6 +165,8 @@ void LCD::zero_max(uint8_t meas){
   LCD::print(F("Data no longer stored."));
   LCD::setCursor(0, 3);
   LCD::print(F("Press to continue"));
+  while (digitalRead(YES_PIN)){;} 
+  delay(PIN_DB);
   return;
 }
 
@@ -178,13 +180,19 @@ void LCD::datapoint_max(uint8_t zero){
   return;
 }
 
-void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z){
+void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z,char * custom){
   LCD::standard_screen(zero,meas);
   LCD::setCursor(0, 1);
   LCD::print(F("Point "));
   LCD::print(zero);
   LCD::print(F(":"));
-  LCD::print(meas-1);
+  if (custom){
+    LCD::setCursor(0, 3);
+    LCD::print(custom);
+  }
+  else{
+   LCD::print(meas-1); 
+  }
   LCD::setCursor(0, 2);
   LCD::printByte(0);
   LCD::print(F("h: "));
@@ -194,11 +202,13 @@ void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float 
   LCD::print(F("At "));
   LCD::print(x);
   LCD::print(F(","));
-  LCD::print(y);  
+  LCD::print(y); 
+  while (digitalRead(YES_PIN)){;} 
+  delay(PIN_DB);
   return;
 }
 
-void LCD::print_zero(uint8_t zero, float x, float y){
+void LCD::print_zero(uint8_t zero, float x, float y,char * custom){
   LCD::standard_screen(zero,0);
   LCD::setCursor(0, 1);
   LCD::print(F("Set zero point "));
@@ -208,6 +218,12 @@ void LCD::print_zero(uint8_t zero, float x, float y){
   LCD::print(x);
   LCD::print(F(","));
   LCD::print(y);  
+  if (custom){
+    LCD::setCursor(0, 3);
+    LCD::print(custom);
+  }
+  while (digitalRead(YES_PIN)){;}
+  delay(PIN_DB);
   return;
 }
 

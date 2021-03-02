@@ -58,6 +58,7 @@ struct state_machine {
   unsigned int custom : 1;
   unsigned int zero : 1;
   unsigned int meas : 6;
+  unsigned int gps_override : 1;
 };
 
 char lcd_state; // startup screen, lcd state from MSB to LSB: Setup screen, GPSLock screen, standard screen, zero prompt, measurement print, zero print, meas max, zero max,
@@ -66,6 +67,9 @@ struct state_machine state;
 
 void setup()
 {
+
+  pinMode(ME_PIN, INPUT_PULLUP);
+  pinMode(ZE_PIN, INPUT_PULLUP);
 
   // Startup Serial
   Serial.begin(115200);
@@ -87,6 +91,7 @@ void setup()
   state.zero = 0;
   state.meas = 0;
   state.card = digitalRead(CD_PIN);
+  state.gps_override = 0;
 
   if (! state.card){
     delete data;
@@ -103,34 +108,34 @@ void setup()
   Serial.print(F("GPS init... "));
   gps_ss.begin(GPS_BAUD);
 
-  while(1){
-  uint8_t num_sats;
-
-  num_sats = gps.satellites();
-  unsigned long age, date, time, chars = 0;
-  short unsigned int sentences = 0, failed = 0;
-
-  gps.stats(&chars, &sentences, &failed);
-
-
-
-  Serial.println(chars);
-  Serial.println(sentences);
-  Serial.println(failed);
-
-  lcd.gpslock_screen(num_sats, TinyGPS::GPS_INVALID_SATELLITES);
-  lcd.top_bar(state.card);
-  lcd_state = 0b01000000;
-  
-  if (num_sats == TinyGPS::GPS_INVALID_SATELLITES) {
-    Serial.println(F("GPS has no lock"));
-  } else {
-    Serial.print(F("GPS: "));
-    Serial.print(num_sats);
-    Serial.println(F(" Sats"));
-  }
-  Serial.println(F("Done"));
-  }
+//  while(1){
+//  uint8_t num_sats;
+//
+//  num_sats = gps.satellites();
+//  unsigned long age, date, time, chars = 0;
+//  short unsigned int sentences = 0, failed = 0;
+//
+//  gps.stats(&chars, &sentences, &failed);
+//
+//
+//
+//  Serial.println(chars);
+//  Serial.println(sentences);
+//  Serial.println(failed);
+//
+//  lcd.gpslock_screen(num_sats, TinyGPS::GPS_INVALID_SATELLITES);
+//  lcd.top_bar(state.card);
+//  lcd_state = 0b01000000;
+//  
+//  if (num_sats == TinyGPS::GPS_INVALID_SATELLITES) {
+//    Serial.println(F("GPS has no lock"));
+//  } else {
+//    Serial.print(F("GPS: "));
+//    Serial.print(num_sats);
+//    Serial.println(F(" Sats"));
+//  }
+//  Serial.println(F("Done"));
+//  }
 
   // Initialize Adafruit DPS310
 
@@ -158,7 +163,27 @@ void setup()
 
 void loop()
 {
-  if (!state.zero){
+  uint8_t num_sats;
+
+  num_sats = gps.satellites();
+  unsigned long age, date, time, chars = 0;
+  short unsigned int sentences = 0, failed = 0;
+
+  gps.stats(&chars, &sentences, &failed);
+
+
+
+  Serial.println(chars);
+  Serial.println(sentences);
+  Serial.println(failed);
+
+
+  ///// check GPS stuff above 
+  if ( 1 ){  // no GPS lock
+    state.gps_override = lcd.gpslock_screen(num_sats, TinyGPS::GPS_INVALID_SATELLITES) || state.gps_override;
+    
+  }
+  else if (!state.zero){ // zero is not set
     if (lcd_state != 0b00010000){
       if (state.customE) {lcd.clear(); state.custom = lcd.custom_select();}
       if(state.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }
@@ -171,45 +196,50 @@ void loop()
       lcd.datapoint_max(data->file_number);
       lcd_state = 0b00100010; }
     }
-  else if (data->file_number > 100){  // too many zeros
+  else if (data->file_number > 100 && state.custom){  // too many zeros
     if ( lcd_state != 0b00100001){
       lcd.zero_max(state.meas);
       lcd_state = 0b00100001;
     }
+    state.custom = 0;
+    state.card = 0;
   }
-  else if (! digitalRead(ZE_PIN)){
+  else if (! digitalRead(ZE_PIN)){ // if command to zero is input
+    data->reset();
     lcd.clear();
     delay(PIN_DB);
-    if (state.customE) {lcd.clear(); state.custom = lcd.custom_select();}
+    if (state.customE) {state.custom = lcd.custom_select();}
     if(state.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }
     data->file_number++;    
-    lcd_state=0b00000000;
-  }
-  else if (! digitalRead(ME_PIN)){
+    float lat = 100.0,lon=100.0;
     
 
-
+    if(state.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }lcd.print_zero(data->file_number,lat,lon);
     lcd_state=0b00000000;
   }
-  else if (!lcd_state == 0b00000000){
-    if(state.custom){ data->get_custom_location(); lcd.standard_screen(data->file_number,state.meas,data->custom_name);} else { lcd.standard_screen(data->file_number,state.meas); }
+  else if (! digitalRead(ME_PIN)){ // command to meaasure is input
+    lcd.clear();
+    delay(PIN_DB);
+    float lat = 100.0,lon=100.0,h;
+
+    if(state.custom){ data->get_custom_location(); lcd.print_measurement(data->file_number,state.meas,lat,lon,h,data->custom_name);} else { lcd.print_measurement(data->file_number,state.meas,lat,lon,h);}
+    lcd_state=0b00000000;
+  }
+  else if (!lcd_state == 0b00000000){ // reset to standard screen
+    if(state.custom){lcd.standard_screen(data->file_number,state.meas,data->custom_name);} else { lcd.standard_screen(data->file_number,state.meas); }
   }
 
 
   lcd.top_bar(state.card);
-// float voltage = (float)analogRead(BAT_PIN); // * 5.0/1024.0; for actual voltage
-//uint16_t voltage = (uint16_t)analogRead(BAT_PIN);
- // Serial.println(voltage);
-
 
 }
 
 
-static void delay_and_read_gps(unsigned long ms){
-  unsigned long start = millis();
-  do 
-  {
-    while (gps_ss.available())
-      gps.encode(gps_ss.read());
-  } while (millis() - start < ms);
-}
+//static void delay_and_read_gps(unsigned long ms){
+//  unsigned long start = millis();
+//  do 
+//  {
+//    while (gps_ss.available())
+//      gps.encode(gps_ss.read());
+//  } while (millis() - start < ms);
+//}
