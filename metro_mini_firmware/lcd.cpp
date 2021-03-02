@@ -1,5 +1,7 @@
 #include "LiquidCrystal_I2C.h"
 #include "lcd.h"
+#include <Arduino.h>
+#include "pinout.h"
 // LCD Functions
 
 #if defined(ARDUINO) && ARDUINO >= 100
@@ -12,7 +14,9 @@ const PROGMEM uint16_t MAX_VOLT = 880;
 const PROGMEM uint16_t  MIN_VOLT = 574;
 const PROGMEM float SCALE_VOLT = 0.3267973856209;
 
-uint8_t voltage_to_percent(uint16_t volt){
+
+uint8_t voltage_to_percent(){
+  uint16_t volt = (uint16_t)analogRead(BAT_PIN);
   uint8_t percent;
   if (volt > (pgm_read_byte(&MAX_VOLT))){
     percent = 100;
@@ -61,8 +65,8 @@ void LCD::setup(){
   return;
 }
 
-void LCD::top_bar(uint16_t volt,bool card){
-  uint8_t percent = voltage_to_percent(volt);
+void LCD::top_bar(bool card){
+  uint8_t percent = voltage_to_percent();
   LCD::setCursor(15,0);
   if (card) LCD::print(F("C"));
   LCD::setCursor(17,0); 
@@ -125,7 +129,7 @@ void LCD::gpslock_screen(int sats,int invalid_sats){
   return;
 }
 
-void LCD::zero_prompt_screen(char * custom = NULL){
+void LCD::zero_prompt_screen(char * custom){
   LCD::clear();
   LCD::setCursor(0, 0);
   LCD::print(F("Hold to zero."));
@@ -138,7 +142,7 @@ void LCD::zero_prompt_screen(char * custom = NULL){
   return;
 }
 
-void LCD::standard_screen(uint8_t zero, uint8_t meas, char * custom = NULL){
+void LCD::standard_screen(uint8_t zero, uint8_t meas, char * custom){
   LCD::clear();
   LCD::setCursor(0, 0);
   LCD::print(zero);
@@ -165,7 +169,7 @@ void LCD::zero_max(uint8_t meas){
 }
 
 
-void LCD::datapoiont_max(uint8_t zero){
+void LCD::datapoint_max(uint8_t zero){
   LCD::standard_screen(zero,49);
   LCD::setCursor(0, 1);
   LCD::print(F("Data point limit."));
@@ -205,4 +209,18 @@ void LCD::print_zero(uint8_t zero, float x, float y){
   LCD::print(F(","));
   LCD::print(y);  
   return;
+}
+
+bool LCD::custom_select(){
+  LCD::setCursor(0, 3);
+  LCD::print(F("Use preset locations?"));
+  while (1){
+    if (!digitalRead(YES_PIN)){
+      delay(PIN_DB);
+      return 1;}
+    else if (!digitalRead(NO_PIN)){
+      delay(PIN_DB);
+      return 0;}
+  }
+  
 }

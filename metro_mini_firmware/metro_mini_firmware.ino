@@ -8,6 +8,7 @@
 
     Our Pin Assignments
 
+    D2 is Measure/Yes/Accept, D4 is Zero/No
     D6 Low Battery Warning, connected to LBO pin, will be pulled to ground if battery is low (can potentionally combine this with A3 if LBO is actually connected to BAT
     D7, D8 Software Serial for GPS
     D9 CD SD Card Detect
@@ -31,6 +32,8 @@
 #include <TinyGPS.h>
 #include "lcd.h"
 #include <inttypes.h>
+#include "data.h"
+#include "pinout.h"
 
 // Pressure Sensor Object
 Adafruit_DPS310 dps;
@@ -41,16 +44,29 @@ Adafruit_Sensor *dps_pressure = dps.getPressureSensor();
 LCD lcd(0x27, 20, 4); // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 #define GPS_BAUD 9600
-#define BAT_PIN 3
-
 // Software Serial Object for GPS, (rx, tx)
 SoftwareSerial gps_ss(7, 8);
 
 // GPS Object
 TinyGPS gps;
 
+Dataset* data;
+
+struct state_machine {
+  unsigned int card : 1;
+  unsigned int customE : 1;
+  unsigned int custom : 1;
+  unsigned int zero : 1;
+  unsigned int meas : 6;
+};
+
+char lcd_state; // startup screen, lcd state from MSB to LSB: Setup screen, GPSLock screen, standard screen, zero prompt, measurement print, zero print, meas max, zero max,
+
+struct state_machine state;
+
 void setup()
 {
+
   // Startup Serial
   Serial.begin(115200);
   while (!Serial) delay(10);
@@ -62,58 +78,32 @@ void setup()
   // Initialize the LCD, will call Wire.begin()
 
   lcd.setup();                      // initialize the lcd
-  //lcd.startup_screen();
-
-  //  lcd.standard_screen(0,2);
-    //lcd.print_measurement(0, 2, -42.567, -10.532, 35.62);
-    //lcd.print_battery(10,1);
+  lcd.startup_screen();
+  lcd_state = 0b10000000;
 
   Serial.println(F("Done"));
+
+  // Card detect
+  state.zero = 0;
+  state.meas = 0;
+  state.card = digitalRead(CD_PIN);
+
+  if (! state.card){
+    delete data;
+    Serial.println(F("No card, destructing dataclass"));
+  }
+  else{
+    data = new Dataset;
+    state.customE = data->get_files();
+    Serial.print(F("Card with file count "));
+    Serial.println(data->file_number);
+  }
 
   // Initialize GPS Software Serial
   Serial.print(F("GPS init... "));
   gps_ss.begin(GPS_BAUD);
-  Serial.println(F("Done"));
 
-
-  // Initialize Adafruit DPS310
-
-  Serial.print(F("DPS310 init... "));
-  if (! dps.begin_I2C(DPS310_I2CADDR_DEFAULT, &Wire)) {
-    Serial.print(" ... ");
-//    while (1) y/ield();
-  }
-  Serial.print(F("Config... "));
-
-  // Setup highest precision
-  dps.configurePressure(DPS310_64HZ, DPS310_64SAMPLES);
-  dps.configureTemperature(DPS310_64HZ, DPS310_64SAMPLES);
-
-  Serial.println(F("Done"));
-
-  Serial.println(F("Sensor Details"));
-
-  dps_temp->printSensorDetails();
-  dps_pressure->printSensorDetails();
-
-
-
-
-
-  Serial.println(F("Init. Done"));
-
-}
-
-
-void loop()
-{
-
-// float voltage = (float)analogRead(BAT_PIN); // * 5.0/1024.0; for actual voltage
-uint16_t voltage = (uint16_t)analogRead(BAT_PIN);
-bool card = 0; // is the sd card present
-  Serial.println(voltage);
-
-
+  while(1){
   uint8_t num_sats;
 
   num_sats = gps.satellites();
@@ -129,7 +119,8 @@ bool card = 0; // is the sd card present
   Serial.println(failed);
 
   lcd.gpslock_screen(num_sats, TinyGPS::GPS_INVALID_SATELLITES);
-  lcd.top_bar(voltage,card);
+  lcd.top_bar(state.card);
+  lcd_state = 0b01000000;
   
   if (num_sats == TinyGPS::GPS_INVALID_SATELLITES) {
     Serial.println(F("GPS has no lock"));
@@ -138,35 +129,83 @@ bool card = 0; // is the sd card present
     Serial.print(num_sats);
     Serial.println(F(" Sats"));
   }
-
-  sensors_event_t temp_event, pressure_event;
-
-  if (dps.temperatureAvailable()) {
-    dps_temp->getEvent(&temp_event);
-    Serial.print(F("Temp = "));
-    Serial.print(temp_event.temperature);
-    Serial.println(F(" *C"));
-    Serial.println();
+  Serial.println(F("Done"));
   }
 
-  // Reading pressure also reads temp so don't check pressure
-  // before temp!
-  if (dps.pressureAvailable()) {
-    dps_pressure->getEvent(&pressure_event);
-    Serial.print(F("Pres. = "));
-    Serial.print(pressure_event.pressure);
-    Serial.println(F(" hPa"));
+  // Initialize Adafruit DPS310
 
-    Serial.println();
+  Serial.print(F("DPS310 init... "));
+  if (! dps.begin_I2C(DPS310_I2CADDR_DEFAULT, &Wire)) {
+    Serial.print(F("... "));
   }
-  lcd.progress_loop(13,0,1);
-  delay_and_read_gps(1000);
+  Serial.print(F("Config... "));
+
+  // Setup highest precision
+  dps.configurePressure(DPS310_64HZ, DPS310_64SAMPLES);
+  dps.configureTemperature(DPS310_64HZ, DPS310_64SAMPLES);
+
+  Serial.println(F("Done"));
+
+  Serial.println(F("Sensor Details"));
+
+  dps_temp->printSensorDetails();
+  dps_pressure->printSensorDetails();
+
+  Serial.println(F("Init. Done"));
 
 }
 
 
-static void delay_and_read_gps(unsigned long ms)
+void loop()
 {
+  if (!state.zero){
+    if (lcd_state != 0b00010000){
+      if (state.customE) {lcd.clear(); state.custom = lcd.custom_select();}
+      if(state.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }
+      lcd_state = 0b00010000;
+      state.zero = 1;
+    }
+  }
+  else if (state.meas > 50){  // too many datapoints
+    if ( lcd_state != 0b00100010){
+      lcd.datapoint_max(data->file_number);
+      lcd_state = 0b00100010; }
+    }
+  else if (data->file_number > 100){  // too many zeros
+    if ( lcd_state != 0b00100001){
+      lcd.zero_max(state.meas);
+      lcd_state = 0b00100001;
+    }
+  }
+  else if (! digitalRead(ZE_PIN)){
+    lcd.clear();
+    delay(PIN_DB);
+    if (state.customE) {lcd.clear(); state.custom = lcd.custom_select();}
+    if(state.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }
+    data->file_number++;    
+    lcd_state=0b00000000;
+  }
+  else if (! digitalRead(ME_PIN)){
+    
+
+
+    lcd_state=0b00000000;
+  }
+  else if (!lcd_state == 0b00000000){
+    if(state.custom){ data->get_custom_location(); lcd.standard_screen(data->file_number,state.meas,data->custom_name);} else { lcd.standard_screen(data->file_number,state.meas); }
+  }
+
+
+  lcd.top_bar(state.card);
+// float voltage = (float)analogRead(BAT_PIN); // * 5.0/1024.0; for actual voltage
+//uint16_t voltage = (uint16_t)analogRead(BAT_PIN);
+ // Serial.println(voltage);
+
+
+}
+
+
+static void delay_and_read_gps(unsigned long ms){
   unsigned long start = millis();
   do 
   {

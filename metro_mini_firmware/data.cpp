@@ -2,10 +2,10 @@
 #include <SPI.h>
 #include <SD.h> 
 
-void Dataset::name_file(uint8_t zero, bool custom){
-  int i = zero % 10;
+void Dataset::name_file(bool custom){
+  int i = file_number % 10;
   filename[2] = i+30;
-  (zero>99) ? filename[1] = int((zero-i)/10) : filename[1] = 0;
+  (file_number>99) ? filename[1] = int((file_number-i)/10) : filename[1] = 0;
   (custom) ? filename[0] = 'C' : filename[0] = 'F';
   return;
 }

@@ -15,7 +15,7 @@ class Dataset : public SDClass
 {
   public:
     void reset();
-    void name_file(uint8_t zero, bool custom);
+    void name_file(bool custom);
     void set_zero(float x, float y, float pressure, struct date dt);
     float get_zero_pressure(void);
     void record_measurement(float x, float y, float meas, struct date dt);
