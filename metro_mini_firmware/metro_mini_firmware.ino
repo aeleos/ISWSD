@@ -148,6 +148,7 @@ void loop()
   {
     delay_and_read_gps(500);
     si.gps_override = (lcd.gpslock_screen(num_sats, TinyGPS::GPS_INVALID_SATELLITES) || si.gps_override);
+    lcd.progress_loop(11,0,1);
     if (si.card) {data->name_file(si.custom,si.zero_count);}
     break;
   }
