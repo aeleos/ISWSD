@@ -148,6 +148,7 @@ void loop()
   {
     si.gps_override = (lcd.gpslock_screen(num_sats, TinyGPS::GPS_INVALID_SATELLITES) || si.gps_override);
     if (si.card) {data->name_file(si.custom,si.zero_count);}
+    break;
   }
   case 1: // unset zero
   {
@@ -160,6 +161,7 @@ void loop()
         si.zero = 1;
         state = 4;
       }
+      break;
     }
   }
   case 2: // too many data points
@@ -167,6 +169,7 @@ void loop()
     if ( lcd_state != 0b00100010){
       lcd.datapoint_max(si.zero_count);
       lcd_state = 0b00100010; }
+    break;
   }
   case 3: // too many zeros
   {
@@ -180,6 +183,7 @@ void loop()
     }
     si.custom = 0;
     si.card = 0;
+    break;
   }
   case 4: // press for zero
   {
@@ -210,6 +214,7 @@ void loop()
 
     if(si.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }lcd.print_zero(si.zero_count,lat,lon);
     lcd_state=0b00000000;
+    break;
   }
   case 5: // press for measurement
   {
@@ -236,6 +241,7 @@ void loop()
     if(si.custom){ data->get_custom_location(); lcd.print_measurement(si.zero_count,si.meas,lat,lon,h,data->custom_name);} else { lcd.print_measurement(si.zero_count,si.meas,lat,lon,h);}
     lcd_state=0b00000000;
     si.meas++;
+    break;
   }
  }
 
