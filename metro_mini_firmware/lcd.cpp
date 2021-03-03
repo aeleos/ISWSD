@@ -162,9 +162,9 @@ void LCD::zero_max(uint8_t meas){
   LCD::setCursor(0, 1);
   LCD::print(F("SD card full."));
   LCD::setCursor(0, 2);
-  LCD::print(F("Data no longer stored."));
+  LCD::print(F("Data not stored."));
   LCD::setCursor(0, 3);
-  LCD::print(F("Press to continue"));
+  LCD::print(F("Press to continue."));
   while (digitalRead(YES_PIN)){;} 
   delay(PIN_DB);
   return;

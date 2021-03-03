@@ -93,7 +93,7 @@ void setup()
   // Card detect
   state_indicators.zero = 0;
   state_indicators.meas = 0;
-  state_indicators.card = !digitalRead(CD_PIN);
+  state_indicators.card = ! (bool)digitalRead(CD_PIN);
   state_indicators.gps_override = 0;
 
   if (! state_indicators.card){
@@ -242,7 +242,7 @@ void loop()
   else if (state_indicators.meas > 50){  // too many datapoints
      state = 2;
     }
-  else if (data->file_number > 100 && state_indicators.custom){  // too many zeros
+  else if (data->file_number > 99 && state_indicators.custom){  // too many zeros
     state = 3;
   }
   else if (! digitalRead(ZE_PIN)){ // if command to zero is input
