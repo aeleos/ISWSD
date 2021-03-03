@@ -59,6 +59,7 @@ struct state_machine {
   unsigned int zero : 1;
   unsigned int meas : 6;
   unsigned int gps_override : 1;
+  uint8_t zero_count;
 };
 
 char state = 0;
@@ -95,6 +96,7 @@ void setup()
   state_indicators.meas = 0;
   state_indicators.card = ! (bool)digitalRead(CD_PIN);
   state_indicators.gps_override = 0;
+  state_indicators.zero_count = 0;
 
   if (! state_indicators.card){
     delete data;
@@ -102,9 +104,9 @@ void setup()
   }
   else{
     data = new Dataset;
-    state_indicators.customE = data->get_files();
+    state_indicators.customE = data->get_files(&state_indicators.zero_count);
     Serial.print(F("Card with file count "));
-    Serial.println(data->file_number);
+    Serial.println(state_indicators.zero_count);
   }
 
   // Initialize GPS Software Serial
@@ -144,7 +146,8 @@ void loop()
  switch(state){
   case 0:
   {
-    state_indicators.gps_override = lcd.gpslock_screen(num_sats, TinyGPS::GPS_INVALID_SATELLITES) || state_indicators.gps_override;
+    state_indicators.gps_override = (lcd.gpslock_screen(num_sats, TinyGPS::GPS_INVALID_SATELLITES) || state_indicators.gps_override);
+    if (state_indicators.card) {data->name_file(state_indicators.custom,state_indicators.zero_count);}
   }
   case 1:
   {
@@ -158,11 +161,15 @@ void loop()
   case 2:
   {
     if ( lcd_state != 0b00100010){
-      lcd.datapoint_max(data->file_number);
+      lcd.datapoint_max(state_indicators.zero_count);
       lcd_state = 0b00100010; }
   }
   case 3:
   {
+    if (!state_indicators.custom){
+      state_indicators.zero_count = 0;
+      break;
+    }
     if ( lcd_state != 0b00100001){
       lcd.zero_max(state_indicators.meas);
       lcd_state = 0b00100001;
@@ -175,9 +182,10 @@ void loop()
     data->reset();
     lcd.clear();
     delay(PIN_DB);
+    state_indicators.zero_count++;    
     if (state_indicators.customE) {state_indicators.custom = lcd.custom_select();}
     if(state_indicators.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }
-    data->file_number++;    
+    if (state_indicators.card) {data->name_file(state_indicators.custom,state_indicators.zero_count);}
 
     float h = dps.readAltitude(data->get_zero_pressure());
     long lat, lon;
@@ -196,7 +204,7 @@ void loop()
       }
       data->set_zero(lat,lon,h,d,t);
 
-    if(state_indicators.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }lcd.print_zero(data->file_number,lat,lon);
+    if(state_indicators.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }lcd.print_zero(state_indicators.zero_count,lat,lon);
     lcd_state=0b00000000;
   }
   case 5:
@@ -221,13 +229,13 @@ void loop()
       }
       data->record_measurement(lat,lon,h,d,t);
 
-    if(state_indicators.custom){ data->get_custom_location(); lcd.print_measurement(data->file_number,state_indicators.meas,lat,lon,h,data->custom_name);} else { lcd.print_measurement(data->file_number,state_indicators.meas,lat,lon,h);}
+    if(state_indicators.custom){ data->get_custom_location(); lcd.print_measurement(state_indicators.zero_count,state_indicators.meas,lat,lon,h,data->custom_name);} else { lcd.print_measurement(state_indicators.zero_count,state_indicators.meas,lat,lon,h);}
     lcd_state=0b00000000;
     state_indicators.meas++;
   }
  }
 
-    lcd.top_bar(state_indicators.card);
+lcd.top_bar(state_indicators.card);
 
     
 
@@ -242,7 +250,7 @@ void loop()
   else if (state_indicators.meas > 50){  // too many datapoints
      state = 2;
     }
-  else if (data->file_number > 99 && state_indicators.custom){  // too many zeros
+  else if (state_indicators.zero_count > 99){  // too many zeros
     state = 3;
   }
   else if (! digitalRead(ZE_PIN)){ // if command to zero is input

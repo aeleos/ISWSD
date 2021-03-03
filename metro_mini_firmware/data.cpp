@@ -2,7 +2,7 @@
 #include <SPI.h>
 #include <SD.h> 
 
-void Dataset::name_file(bool custom){
+void Dataset::name_file(bool custom, uint8_t file_number){
   int i = file_number % 10;
   filename[2] = i+30;
   (file_number>99) ? filename[1] = int((file_number-i)/10) : filename[1] = 0;
@@ -40,14 +40,14 @@ void Dataset::record_measurement(long x, long y, float meas, unsigned long d, un
   return;
 }
 
-bool Dataset::get_files(){
+bool Dataset::get_files(uint8_t * file_count){
   File dir;
   dir = open("/");
   uint8_t c=0;
   bool custom = 0;
   
     while (true) {
-    file_number++;
+    *file_count++;
     File entry =  dir.openNextFile();
     if (! entry) {
       // no more files
@@ -57,7 +57,7 @@ bool Dataset::get_files(){
     
     if (entry.name() == "cust.txt") {
       custom = 1;
-      file_number--;
+      *file_count--;
       }
     entry.close();
   }
