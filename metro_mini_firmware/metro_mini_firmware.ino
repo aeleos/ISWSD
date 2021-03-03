@@ -1,3 +1,4 @@
+
 /*
    Metro Mini Pinout
 
@@ -148,7 +149,7 @@ void loop()
   case 0:  // no GPS lock
   {
     if (lcd_state != 0b01000000) {lcd_state = 0b01000000; lcd.gpslock_screen();}
-    si.gps_override = (!digitalRead(YES_PIN) || si.gps_override);
+    si.gps_override = (!(bool)digitalRead(YES_PIN) || si.gps_override);
     lcd.progress_loop(11,0,1);
     if (si.card) {data->name_file(si.custom,si.zero_count);}
     break;
@@ -160,7 +161,7 @@ void loop()
       if(si.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }
       lcd_state = 0b00010000;
     }
-    if (!digitalRead(ZE_PIN)){
+    if (!(bool)digitalRead(ZE_PIN)){
         Serial.println(F("HERE!"));
         si.zero = 1;
         state = 4;
@@ -266,10 +267,10 @@ lcd.top_bar(si.card);
   else if (si.zero_count > 99){  // too many zeros
     state = 3;
   }
-  else if (! digitalRead(ZE_PIN)){ // if command to zero is input
+  else if (! (bool)digitalRead(ZE_PIN)){ // if command to zero is input
     state = 4;
   }
-  else if (! digitalRead(ME_PIN)){ // command to measure is input
+  else if (! (bool)digitalRead(ME_PIN)){ // command to measure is input
     state = 5;
   }
 
