@@ -147,7 +147,7 @@ void loop()
  switch(state){
   case 0:  // no GPS lock
   {
-    if (lcd_state != 0b01000000) {lcd_state != 0b01000000; lcd.gpslock_screen();}
+    if (lcd_state != 0b01000000) {lcd_state = 0b01000000; lcd.gpslock_screen();}
     si.gps_override = (!digitalRead(YES_PIN) || si.gps_override);
     lcd.progress_loop(11,0,1);
     if (si.card) {data->name_file(si.custom,si.zero_count);}
