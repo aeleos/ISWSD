@@ -229,7 +229,7 @@ void LCD::print_zero(uint8_t zero, float x, float y,char * custom){
 
 bool LCD::custom_select(){
   LCD::setCursor(0, 3);
-  LCD::print(F("Use preset locations?"));
+  LCD::print(F("Use presets?"));
   while (1){
     if (!digitalRead(YES_PIN)){
       delay(PIN_DB);
