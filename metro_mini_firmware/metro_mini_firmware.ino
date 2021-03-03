@@ -146,6 +146,7 @@ void loop()
  switch(state){
   case 0:  // no GPS lock
   {
+    delay_and_read_gps(500);
     si.gps_override = (lcd.gpslock_screen(num_sats, TinyGPS::GPS_INVALID_SATELLITES) || si.gps_override);
     if (si.card) {data->name_file(si.custom,si.zero_count);}
     break;
@@ -156,12 +157,12 @@ void loop()
       if (si.customE) {lcd.clear(); si.custom = lcd.custom_select();}
       if(si.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }
       lcd_state = 0b00010000;
-      if (digitalRead(ZE_PIN)){
+    }
+    if (digitalRead(ZE_PIN)){
         Serial.println(F("HERE!"));
         si.zero = 1;
         state = 4;
       }
-    }
     if (state != 4) {break;}
   }
   case 2: // too many data points
@@ -273,11 +274,11 @@ lcd.top_bar(si.card);
 }
 
 
-//static void delay_and_read_gps(unsigned long ms){
-//  unsigned long start = millis();
-//  do 
-//  {
-//    while (gps_ss.available())
-//      gps.encode(gps_ss.read());
-//  } while (millis() - start < ms);
-//}
+static void delay_and_read_gps(unsigned long ms){
+  unsigned long start = millis();
+  do 
+  {
+    while (gps_ss.available())
+      gps.encode(gps_ss.read());
+  } while (millis() - start < ms);
+}
