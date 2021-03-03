@@ -52,7 +52,7 @@ TinyGPS gps;
 
 Dataset* data;
 
-struct state_machine {
+struct state_indicators {
   unsigned int card : 1;
   unsigned int customE : 1;
   unsigned int custom : 1;
@@ -64,9 +64,9 @@ struct state_machine {
 
 char state = 0;
 
-char lcd_state; // startup screen, lcd state_indicators from MSB to LSB: Setup screen, GPSLock screen, standard screen, zero prompt, measurement print, zero print, meas max, zero max,
+char lcd_state; // startup screen, lcd si from MSB to LSB: Setup screen, GPSLock screen, standard screen, zero prompt, measurement print, zero print, meas max, zero max,
 
-struct state_machine state_indicators;
+struct state_indicators si;
 
 void setup()
 {
@@ -92,21 +92,21 @@ void setup()
   Serial.println(F("Done"));
 
   // Card detect
-  state_indicators.zero = 0;
-  state_indicators.meas = 0;
-  state_indicators.card = ! (bool)digitalRead(CD_PIN);
-  state_indicators.gps_override = 0;
-  state_indicators.zero_count = 0;
+  si.zero = 0;
+  si.meas = 0;
+  si.card = ! (bool)digitalRead(CD_PIN);
+  si.gps_override = 0;
+  si.zero_count = 0;
 
-  if (! state_indicators.card){
+  if (! si.card){
     delete data;
     Serial.println(F("No card, destructing dataclass"));
   }
   else{
     data = new Dataset;
-    state_indicators.customE = data->get_files(&state_indicators.zero_count);
+    si.customE = data->get_files(&si.zero_count);
     Serial.print(F("Card with file count "));
-    Serial.println(state_indicators.zero_count);
+    Serial.println(si.zero_count);
   }
 
   // Initialize GPS Software Serial
@@ -146,17 +146,17 @@ void loop()
  switch(state){
   case 0:  // no GPS lock
   {
-    state_indicators.gps_override = (lcd.gpslock_screen(num_sats, TinyGPS::GPS_INVALID_SATELLITES) || state_indicators.gps_override);
-    if (state_indicators.card) {data->name_file(state_indicators.custom,state_indicators.zero_count);}
+    si.gps_override = (lcd.gpslock_screen(num_sats, TinyGPS::GPS_INVALID_SATELLITES) || si.gps_override);
+    if (si.card) {data->name_file(si.custom,si.zero_count);}
   }
   case 1: // unset zero
   {
     if (lcd_state != 0b00010000){
-      if (state_indicators.customE) {lcd.clear(); state_indicators.custom = lcd.custom_select();}
-      if(state_indicators.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }
+      if (si.customE) {lcd.clear(); si.custom = lcd.custom_select();}
+      if(si.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }
       lcd_state = 0b00010000;
       if (! digitalRead(ZE_PIN)){
-        state_indicators.zero = 1;
+        si.zero = 1;
         state = 4;
       }
     }
@@ -164,31 +164,31 @@ void loop()
   case 2: // too many data points
   {
     if ( lcd_state != 0b00100010){
-      lcd.datapoint_max(state_indicators.zero_count);
+      lcd.datapoint_max(si.zero_count);
       lcd_state = 0b00100010; }
   }
   case 3: // too many zeros
   {
-    if (!state_indicators.custom){
-      state_indicators.zero_count = 0;
+    if (!si.custom){
+      si.zero_count = 0;
       break;
     }
     if ( lcd_state != 0b00100001){
-      lcd.zero_max(state_indicators.meas);
+      lcd.zero_max(si.meas);
       lcd_state = 0b00100001;
     }
-    state_indicators.custom = 0;
-    state_indicators.card = 0;
+    si.custom = 0;
+    si.card = 0;
   }
   case 4: // press for zero
   {
     data->reset();
     lcd.clear();
     delay(PIN_DB);
-    state_indicators.zero_count++;    
-    if (state_indicators.customE) {state_indicators.custom = lcd.custom_select();}
-    if(state_indicators.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }
-    if (state_indicators.card) {data->name_file(state_indicators.custom,state_indicators.zero_count);}
+    si.zero_count++;    
+    if (si.customE) {si.custom = lcd.custom_select();}
+    if(si.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }
+    if (si.card) {data->name_file(si.custom,si.zero_count);}
 
     float h = dps.readAltitude(data->get_zero_pressure());
     long lat, lon;
@@ -197,7 +197,7 @@ void loop()
       gps.get_position(&lat,&lon);
       gps.get_datetime(&d,&t);
 
-      if ((state_indicators.gps_override)){
+      if ((si.gps_override)){
         lat = 100;
       }
       else {
@@ -207,7 +207,7 @@ void loop()
       }
       data->set_zero(lat,lon,h,d,t);
 
-    if(state_indicators.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }lcd.print_zero(state_indicators.zero_count,lat,lon);
+    if(si.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }lcd.print_zero(si.zero_count,lat,lon);
     lcd_state=0b00000000;
   }
   case 5: // press for measurement
@@ -222,7 +222,7 @@ void loop()
       gps.get_position(&lat,&lon);
       gps.get_datetime(&d,&t);
 
-      if ((state_indicators.gps_override)){
+      if ((si.gps_override)){
         lat = 100;
       }
       else {
@@ -232,28 +232,28 @@ void loop()
       }
       data->record_measurement(lat,lon,h,d,t);
 
-    if(state_indicators.custom){ data->get_custom_location(); lcd.print_measurement(state_indicators.zero_count,state_indicators.meas,lat,lon,h,data->custom_name);} else { lcd.print_measurement(state_indicators.zero_count,state_indicators.meas,lat,lon,h);}
+    if(si.custom){ data->get_custom_location(); lcd.print_measurement(si.zero_count,si.meas,lat,lon,h,data->custom_name);} else { lcd.print_measurement(si.zero_count,si.meas,lat,lon,h);}
     lcd_state=0b00000000;
-    state_indicators.meas++;
+    si.meas++;
   }
  }
 
-lcd.top_bar(state_indicators.card);
+lcd.top_bar(si.card);
 
     
 
 // state determination
-  if ( (num_sats == TinyGPS::GPS_INVALID_SATELLITES) && (!state_indicators.gps_override)){  // no GPS lock
+  if ( (num_sats == TinyGPS::GPS_INVALID_SATELLITES) && (!si.gps_override)){  // no GPS lock
     state = 0;
     
   }
-  else if (!state_indicators.zero){ // zero is not set
+  else if (!si.zero){ // zero is not set
     state = 1;
   }
-  else if (state_indicators.meas > 50){  // too many datapoints
+  else if (si.meas > 50){  // too many datapoints
      state = 2;
     }
-  else if (state_indicators.zero_count > 99){  // too many zeros
+  else if (si.zero_count > 99){  // too many zeros
     state = 3;
   }
   else if (! digitalRead(ZE_PIN)){ // if command to zero is input
