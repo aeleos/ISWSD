@@ -144,27 +144,30 @@ void loop()
 
   
  switch(state){
-  case 0:
+  case 0:  // no GPS lock
   {
     state_indicators.gps_override = (lcd.gpslock_screen(num_sats, TinyGPS::GPS_INVALID_SATELLITES) || state_indicators.gps_override);
     if (state_indicators.card) {data->name_file(state_indicators.custom,state_indicators.zero_count);}
   }
-  case 1:
+  case 1: // unset zero
   {
     if (lcd_state != 0b00010000){
       if (state_indicators.customE) {lcd.clear(); state_indicators.custom = lcd.custom_select();}
       if(state_indicators.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }
       lcd_state = 0b00010000;
-      state_indicators.zero = 1;
+      if (! digitalRead(ZE_PIN)){
+        state_indicators.zero = 1;
+        state = 4;
+      }
     }
   }
-  case 2:
+  case 2: // too many data points
   {
     if ( lcd_state != 0b00100010){
       lcd.datapoint_max(state_indicators.zero_count);
       lcd_state = 0b00100010; }
   }
-  case 3:
+  case 3: // too many zeros
   {
     if (!state_indicators.custom){
       state_indicators.zero_count = 0;
@@ -177,7 +180,7 @@ void loop()
     state_indicators.custom = 0;
     state_indicators.card = 0;
   }
-  case 4: 
+  case 4: // press for zero
   {
     data->reset();
     lcd.clear();
@@ -199,7 +202,7 @@ void loop()
       }
       else {
          if (d == TinyGPS::GPS_INVALID_DATE) {d=130000;}
-         if (t == TinyGPS::GPS_INVALID_TIME) {t=130000;}
+         if (t == TinyGPS::GPS_INVALID_TIME) {t=250000;}
         
       }
       data->set_zero(lat,lon,h,d,t);
@@ -207,7 +210,7 @@ void loop()
     if(state_indicators.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }lcd.print_zero(state_indicators.zero_count,lat,lon);
     lcd_state=0b00000000;
   }
-  case 5:
+  case 5: // press for measurement
   {
     lcd.clear();
     delay(PIN_DB);
