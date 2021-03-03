@@ -10,19 +10,29 @@
 #define printByte(args)  print(args,BYTE);
 #endif
 
-const PROGMEM uint16_t MAX_VOLT = 880;
-const PROGMEM uint16_t  MIN_VOLT = 574;
-const PROGMEM float SCALE_VOLT = 0.3267973856209;
+const PROGMEM uint16_t MAX_VOLT = 860;
+const PROGMEM uint16_t MID_VOLT = 778;
+const PROGMEM uint16_t MIN_VOLT = 756;
+const PROGMEM uint8_t OFFSET_VOLTH = 50;
+const PROGMEM uint8_t OFFSET_VOLTL = 21;
+const PROGMEM float SCALE_VOLTH = 0.60975609756;
+const PROGMEM float SCALE_VOLTL = 1.27272727273;
 
 
 uint8_t voltage_to_percent(){
   uint16_t volt = (uint16_t)analogRead(BAT_PIN);
   uint8_t percent;
-  if (volt > (pgm_read_byte(&MAX_VOLT))){
+  if (volt >= (pgm_read_byte(&MAX_VOLT))){
     percent = 100;
   }
+  else if (volt < (pgm_read_byte(&MIN_VOLT))){
+    percent = 0;
+  }
+  else if (volt >= (pgm_read_byte(&MID_VOLT))){
+    percent = (uint8_t)(((volt-(pgm_read_byte(&MID_VOLT))) * (pgm_read_byte(&SCALE_VOLTH)))+(pgm_read_byte(&OFFSET_VOLTH)));
+  }
   else{
-    percent = (uint8_t)(volt-(pgm_read_byte(&MIN_VOLT)) * (pgm_read_byte(&SCALE_VOLT)));
+    percent = (uint8_t)(((volt-(pgm_read_byte(&MIN_VOLT))) * (pgm_read_byte(&SCALE_VOLTL)))+(pgm_read_byte(&OFFSET_VOLTL)));
   }
   return percent;
 }
@@ -70,10 +80,12 @@ void LCD::top_bar(bool card){
   LCD::setCursor(15,0);
   if (card) LCD::print(F("C"));
   LCD::setCursor(17,0); 
+  if (percent == 0 ) {LCD::print(F("LOW"));}
+  else {
   LCD::print(percent);
   if (percent < 100){
   LCD::print(F("%"));
-  }
+  } }
   return;
 }
 
