@@ -224,7 +224,7 @@ void loop()
       }
       else {
          if (d == TinyGPS::GPS_INVALID_DATE) {d=130000;}
-         if (t == TinyGPS::GPS_INVALID_TIME) {t=130000;}
+         if (t == TinyGPS::GPS_INVALID_TIME) {t=250000;}
         
       }
       data->record_measurement(lat,lon,h,d,t);
