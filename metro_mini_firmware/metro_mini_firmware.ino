@@ -142,12 +142,12 @@ void loop()
 {
  // execution
   uint8_t num_sats = gps.satellites();
-  delay_and_read_gps(500);
 
   
  switch(state){
   case 0:  // no GPS lock
   {
+    delay_and_read_gps(1000);
     if (lcd_state != 0b01000000) {lcd_state = 0b01000000; lcd.gpslock_screen();}
     si.gps_override = (!(bool)digitalRead(YES_PIN) || si.gps_override);
     lcd.progress_loop(11,0,1);
@@ -193,7 +193,7 @@ void loop()
   {
     data->reset();
     lcd.clear();
-    delay(PIN_DB);
+    delay_and_read_gps(500);
     si.zero_count++;    
     if (si.customE) {si.custom = lcd.custom_select();}
     if(si.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }
@@ -223,7 +223,7 @@ void loop()
   case 5: // press for measurement
   {
     lcd.clear();
-    delay(PIN_DB);
+    delay_and_read_gps(500);
     
     float h = dps.readAltitude(data->get_zero_pressure());
     long lat, lon;
