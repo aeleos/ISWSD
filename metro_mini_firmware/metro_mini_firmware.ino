@@ -156,13 +156,13 @@ void loop()
       if (si.customE) {lcd.clear(); si.custom = lcd.custom_select();}
       if(si.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }
       lcd_state = 0b00010000;
-      if (! digitalRead(ZE_PIN)){
+      if (digitalRead(ZE_PIN)){
         Serial.println(F("HERE!"));
         si.zero = 1;
         state = 4;
       }
-      break;
     }
+    if (state != 4) {break;}
   }
   case 2: // too many data points
   {
