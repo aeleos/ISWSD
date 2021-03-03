@@ -119,7 +119,7 @@ bool LCD::gpslock_screen(int sats,int invalid_sats){
   LCD::clear();
   LCD::setCursor(0, 0);
   LCD::print(F("GPS Search"));
-  LCD::setCursor(0, 0);
+  LCD::setCursor(0, 1);
   LCD::print(F("Satellites: "));
   if (sats == invalid_sats) {
     LCD::print(F("No Lock"));
