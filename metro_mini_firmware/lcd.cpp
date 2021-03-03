@@ -115,18 +115,14 @@ void LCD::startup_screen(){
   return;
 }
 
-bool LCD::gpslock_screen(int sats,int invalid_sats){
+void LCD::gpslock_screen(){
   LCD::clear();
   LCD::setCursor(0, 0);
   LCD::print(F("GPS Search"));
   LCD::setCursor(0, 1);
   LCD::print(F("Satellites: "));
-  if (sats == invalid_sats) {
-    LCD::print(F("No Lock"));
-  } else {
-    LCD::print(sats);
-  }
-  return (bool)!digitalRead(YES_PIN);
+  LCD::print(F("No Lock"));
+  return;
 }
 
 void LCD::zero_prompt_screen(char * custom){
