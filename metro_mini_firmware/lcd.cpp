@@ -77,6 +77,8 @@ void LCD::setup(){
 
 void LCD::top_bar(bool card){
   uint8_t percent = voltage_to_percent();
+  if (percent != old_percent){ 
+    old_percent=percent;
   LCD::setCursor(15,0);
   if (card) LCD::print(F("C"));
   LCD::setCursor(17,0); 
@@ -85,7 +87,7 @@ void LCD::top_bar(bool card){
   LCD::print(percent);
   if (percent < 100){
   LCD::print(F("%"));
-  } }
+  } }}
   return;
 }
 
@@ -247,4 +249,10 @@ bool LCD::custom_select(){
       return 0;}
   }
   
+}
+
+void LCD::card_overwrite(){
+    LCD::setCursor(15,0);
+    LCD::print(F(" "));
+    return;
 }

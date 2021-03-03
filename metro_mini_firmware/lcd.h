@@ -20,9 +20,11 @@ class LCD : public LiquidCrystal_I2C
     void print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z,char * custom = NULL); // print out the measurements taken
     void print_zero(uint8_t zero, float x, float y,char * custom = NULL); // print out the location of the zero
     bool custom_select();
+    void card_overwrite();
   private:
-    int loopcount = 0;
+    uint8_t loopcount = 0;
     char loop = '\\';
+    uint8_t old_percent;
 };
 
 

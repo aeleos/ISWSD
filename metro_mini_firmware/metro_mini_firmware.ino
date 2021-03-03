@@ -187,6 +187,7 @@ void loop()
     }
     si.custom = 0;
     si.card = 0;
+    lcd.card_overwrite();
     break;
   }
   case 4: // press for zero
