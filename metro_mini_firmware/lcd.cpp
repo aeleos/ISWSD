@@ -10,30 +10,41 @@
 #define printByte(args)  print(args,BYTE);
 #endif
 
-const PROGMEM uint16_t MAX_VOLT = 860;
-const PROGMEM uint16_t MID_VOLT = 778;
-const PROGMEM uint16_t MIN_VOLT = 756;
-const PROGMEM uint8_t OFFSET_VOLTH = 50;
-const PROGMEM uint8_t OFFSET_VOLTL = 21;
-const PROGMEM float SCALE_VOLTH = 0.60975609756;
-const PROGMEM float SCALE_VOLTL = 1.27272727273;
+//const PROGMEM uint16_t MAX_VOLT = 860;
+//const PROGMEM uint16_t MID_VOLT = 778;
+//const PROGMEM uint16_t MIN_VOLT = 756;
+//const PROGMEM uint8_t OFFSET_VOLTH = 50;
+//const PROGMEM uint8_t OFFSET_VOLTL = 21;
+//const PROGMEM float SCALE_VOLTH = 0.60975609756;
+//const PROGMEM float SCALE_VOLTL = 1.27272727273;
+#define MAX_VOLT 860
+#define MID_VOLT 778
+#define MIN_VOLT 756
+#define OFFSET_VOLTH 50
+#define OFFSET_VOLTL 21
+#define SCALE_VOLTH 0.60975609756
+#define SCALE_VOLTL 1.27272727273
 
 
 uint8_t voltage_to_percent(){
   uint16_t volt = (uint16_t)analogRead(BAT_PIN);
+  Serial.print(F("Battery voltage: "));
+  Serial.print(volt);
   uint8_t percent;
-  if (volt >= (pgm_read_byte(&MAX_VOLT))){
+  if (volt >= MAX_VOLT){
     percent = 100;
   }
-  else if (volt < (pgm_read_byte(&MIN_VOLT))){
+  else if (volt < MIN_VOLT){
     percent = 0;
   }
-  else if (volt >= (pgm_read_byte(&MID_VOLT))){
-    percent = (uint8_t)(((volt-(pgm_read_byte(&MID_VOLT))) * (pgm_read_byte(&SCALE_VOLTH)))+(pgm_read_byte(&OFFSET_VOLTH)));
+  else if (volt >= MID_VOLT){
+    percent = (uint8_t)(((volt-MID_VOLT) * SCALE_VOLTH)+OFFSET_VOLTL);
   }
   else{
-    percent = (uint8_t)(((volt-(pgm_read_byte(&MIN_VOLT))) * (pgm_read_byte(&SCALE_VOLTL)))+(pgm_read_byte(&OFFSET_VOLTL)));
+    percent = (uint8_t)(((volt-MIN_VOLT) * SCALE_VOLTL)+OFFSET_VOLTL);
   }
+  Serial.print(F(" - "));
+  Serial.println(percent);
   return percent;
 }
 
@@ -219,12 +230,12 @@ void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float 
 }
 
 void LCD::print_zero(uint8_t zero, float x, float y,char * custom){
-  LCD::standard_screen(zero,0);
+  LCD::standard_screen(zero-1,0);
   LCD::setCursor(0, 1);
   LCD::print(F("Set zero point "));
-  LCD::print(zero);
+  LCD::print(int(zero));
   LCD::setCursor(0, 2);
-  LCD::print(F("Location: "));
+  LCD::print(F("@ "));
   LCD::print(x);
   LCD::print(F(","));
   LCD::print(y);  

@@ -11,7 +11,7 @@ class Dataset : public SDClass
   public:
     void reset();
     void name_file(bool custom,uint8_t file_number);
-    void set_zero(long x, long y, float pressure, unsigned long d, unsigned long t);
+    void set_zero(long x, long y, unsigned long d, unsigned long t);
     float get_zero_pressure(void);
     void record_measurement(long x, long y, float meas, unsigned long d, unsigned long t);
     char filename[8] = "XXX.csv"; // name to which to write, based on which zero number this is

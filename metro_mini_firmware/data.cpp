@@ -15,8 +15,7 @@ void Dataset::reset(){
   return;
 }
 
-void Dataset::set_zero(long x, long y, float pressure, unsigned long d, unsigned long t){
-  zero_hPa = pressure;
+void Dataset::set_zero(long x, long y, unsigned long d, unsigned long t){
   record_measurement(x,y,0.0,d,t);
   return;
 }
