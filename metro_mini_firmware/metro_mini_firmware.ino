@@ -240,9 +240,10 @@ void loop()
       gps.get_position(&lat,&lon);
       gps.get_datetime(&d,&t);
     }
+
+    Serial.println(h);
       
     if (si.card){data->set_zero(lat,lon,d,t);}
-    Serial.print(si.zero_count);
 
     if(si.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else {lcd.print_zero(si.zero_count,lat,lon);}
     lcd_state=0b00000000;
@@ -277,9 +278,7 @@ void loop()
   {
     if (lcd_state != 0b00100000){
     lcd.standard_screen(si.zero_count,si.meas);
-    Serial.print(si.lcd_clear);
     si.lcd_clear = 1;
-    Serial.print(si.lcd_clear);
     lcd_state = 0b00100000;}
   }
     break;
@@ -288,8 +287,6 @@ void loop()
    uint8_t num_sats = gps.satellites();
 
 lcd.top_bar(si.card,num_sats,si.lcd_clear);
-Serial.print(state);
-Serial.println(si.lcd_clear);
 si.lcd_clear = 0;
 
 
