@@ -28,8 +28,8 @@
 
 uint8_t voltage_to_percent(){
   uint16_t volt = (uint16_t)analogRead(BAT_PIN);
-  Serial.print(F("Battery voltage: "));
-  Serial.print(volt);
+  //Serial.print(F("Battery voltage: "));
+  //Serial.print(volt);
   uint8_t percent;
   if (volt >= MAX_VOLT){
     percent = 100;
@@ -38,13 +38,13 @@ uint8_t voltage_to_percent(){
     percent = 0;
   }
   else if (volt >= MID_VOLT){
-    percent = (uint8_t)(((volt-MID_VOLT) * SCALE_VOLTH)+OFFSET_VOLTL);
+    percent = (uint8_t)(((volt-MID_VOLT) * SCALE_VOLTH)+OFFSET_VOLTH);
   }
   else{
     percent = (uint8_t)(((volt-MIN_VOLT) * SCALE_VOLTL)+OFFSET_VOLTL);
   }
-  Serial.print(F(" - "));
-  Serial.println(percent);
+  //Serial.print(F(" - "));
+  //Serial.println(percent);
   return percent;
 }
 
@@ -86,10 +86,14 @@ void LCD::setup(){
   return;
 }
 
-void LCD::top_bar(bool card){
+void LCD::top_bar(bool card,uint8_t sat, bool change){
   uint8_t percent = voltage_to_percent();
-  if (percent != old_percent){ 
+  if (percent < old_percent - 2 || percent > old_percent + 2 || sat != old_sat || change){ 
     old_percent=percent;
+    old_sat = sat;
+  LCD::setCursor(14,0);  
+  if (sat > 9 && sat < 0xFF) {LCD::print(9);}
+  else if (sat < 9) {LCD::print(sat);}
   LCD::setCursor(15,0);
   if (card) LCD::print(F("C"));
   LCD::setCursor(17,0); 
@@ -186,7 +190,8 @@ void LCD::zero_max(uint8_t meas){
   LCD::print(F("Data not stored."));
   LCD::setCursor(0, 3);
   LCD::print(F("Press to continue."));
-  while ((bool)digitalRead(YES_PIN)){;} 
+  top_bar(0,0xFF,1);
+  while ((bool)digitalRead(YES_PIN)){top_bar(0,0xFF,0);}
   delay(PIN_DB);
   return;
 }
@@ -212,7 +217,7 @@ void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float 
     LCD::print(custom);
   }
   else{
-   LCD::print(meas-1); 
+   LCD::print(meas); 
   }
   LCD::setCursor(0, 2);
   LCD::printByte(0);
@@ -220,30 +225,30 @@ void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float 
   LCD::print(z);
   LCD::print(F("ft"));
   LCD::setCursor(0, 3);
-  LCD::print(F("At "));
-  LCD::print(x);
+  LCD::print(long(x));
   LCD::print(F(","));
-  LCD::print(y); 
-  while ((bool)digitalRead(YES_PIN)){;} 
+  LCD::print(long(y)); 
+  top_bar(0,0xFF,1);
+  while ((bool)digitalRead(YES_PIN)){top_bar(0,0xFF,0);}
   delay(PIN_DB);
   return;
 }
 
 void LCD::print_zero(uint8_t zero, float x, float y,char * custom){
-  LCD::standard_screen(zero-1,0);
+  LCD::standard_screen(zero,0);
   LCD::setCursor(0, 1);
   LCD::print(F("Set zero point "));
-  LCD::print(int(zero));
+  LCD::print(zero);
   LCD::setCursor(0, 2);
-  LCD::print(F("@ "));
-  LCD::print(x);
+  LCD::print(long(x));
   LCD::print(F(","));
-  LCD::print(y);  
+  LCD::print(long(y));  
   if (custom){
     LCD::setCursor(0, 3);
     LCD::print(custom);
   }
-  while ((bool)digitalRead(YES_PIN)){;}
+  top_bar(0,0xFF,1);
+  while ((bool)digitalRead(YES_PIN)){top_bar(0,0xFF,0);}
   delay(PIN_DB);
   return;
 }
@@ -252,6 +257,7 @@ bool LCD::custom_select(){
   LCD::setCursor(0, 3);
   LCD::print(F("Use presets?"));
   while (1){
+    top_bar(0,0xFF,0);
     if (!(bool)digitalRead(YES_PIN)){
       delay(PIN_DB);
       return 1;}

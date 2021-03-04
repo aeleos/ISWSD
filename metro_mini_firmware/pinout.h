@@ -5,4 +5,4 @@
 #define YES_PIN 2
 #define NO_PIN 4 
 
-#define PIN_DB 300
+#define PIN_DB 1000
