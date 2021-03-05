@@ -6,9 +6,10 @@
 #include <SD.h>
 
 
-class Dataset : public SDClass
+class Dataset
 {
   public:
+    //bool Data_init();
     void reset();
     void name_file(bool custom,uint8_t file_number);
     void set_zero(long x, long y, unsigned long d, unsigned long t);
@@ -22,6 +23,8 @@ class Dataset : public SDClass
   private:
     float zero_hPa; // pressure in hPa at the zero point
     uint16_t read_to_character = 0;
+    //Sd2Card card;
+    //SdVolume volume;
     
 };
 

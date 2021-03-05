@@ -35,6 +35,7 @@
 #include <inttypes.h>
 #include "data.h"
 #include "pinout.h"
+#include <SD.h>
 
 void freeRam () 
 {
@@ -86,7 +87,8 @@ void setup()
 
   pinMode(ME_PIN, INPUT_PULLUP);
   pinMode(ZE_PIN, INPUT_PULLUP);
-  //pinMode(CD_PIN, INPUT_PULLUP);
+  pinMode(SS_PIN, OUTPUT);
+  pinMode(CD_PIN, INPUT);
 
   // Startup Serial
   Serial.begin(115200);
@@ -109,8 +111,7 @@ void setup()
   si.meas = 0;
   si.card = (bool)digitalRead(CD_PIN);
   si.gps_override = 0;
-  si.zero_count = 0-1;
-  Serial.print(si.zero_count);
+  si.zero_count = 0;
 
   if (! si.card){
     delete data;
@@ -118,10 +119,17 @@ void setup()
   }
   else{
     data = new Dataset;
+    if (SD.begin(SS_PIN)){
     si.customE = data->get_files(&si.zero_count);
     Serial.print(F("Card with file count "));
     Serial.println(si.zero_count);
-  }
+    freeRam();}
+    else{
+      delete data;
+      Serial.println(F("Card init failed."));
+      si.card = 0;
+    }
+    }
 
   // Initialize GPS Software Serial
   //Serial.print(F("GPS init... "));
@@ -178,7 +186,6 @@ void loop()
     }
     if (!(bool)digitalRead(ZE_PIN)){
         //Serial.println(F("HERE!"));
-        si.zero = 1;
         state = 4;
       }
       //Serial.println(F("Exit zero prompt"));
@@ -215,7 +222,7 @@ void loop()
     //Serial.print(F("Read GPS... "));
     delay_and_read_gps(500);
     //Serial.print(F("Data collected... "));
-    si.zero_count++;    
+    if (si.zero == 0){si.zero = 1;}else{si.zero_count++; }   
     if (si.customE) {si.custom = lcd.custom_select();}
     if(si.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }
     if (si.card) {data->name_file(si.custom,si.zero_count);}

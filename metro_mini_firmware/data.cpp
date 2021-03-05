@@ -10,6 +10,13 @@ void Dataset::name_file(bool custom, uint8_t file_number){
   return;
 }
 
+//bool Dataset::Data_init(){
+////  if (!card.init(SPI_HALF_SPEED, SS_PIN)) { return 0;}
+////  if (!volume.init(card)) { return 0;}
+//  if (!SD.begin(10)) {return 0;}
+//    return 1;
+//}
+
 void Dataset::reset(){
   read_to_character = 0;
   return;
@@ -25,7 +32,7 @@ float Dataset::get_zero_pressure(void){
 }
 
 void Dataset::record_measurement(long x, long y, float meas, unsigned long d, unsigned long t){
-    File myFile = open(filename, FILE_WRITE);
+    File myFile = SD.open(filename, FILE_WRITE);
     myFile.print(d);
     myFile.print(',');
     myFile.print(t);
@@ -41,18 +48,20 @@ void Dataset::record_measurement(long x, long y, float meas, unsigned long d, un
 
 bool Dataset::get_files(uint8_t * file_count){
   File dir;
-  dir = open("/");
-  uint8_t c=0;
+  Serial.println(F("Opening Directory... "));
+  dir = SD.open("/");
   bool custom = 0;
   
     while (true) {
-    *file_count++;
     File entry =  dir.openNextFile();
     if (! entry) {
       // no more files
       return custom;
     }
     dir = entry;
+    *file_count++;
+    Serial.print(F("File found: "));
+    Serial.println(*file_count);
     
     if (entry.name() == "cust.txt") {
       custom = 1;
@@ -69,7 +78,7 @@ uint8_t Dataset::get_custom_location(){
   bool av = 0;
 
   File custom;
-  custom = open(F("cust.txt"));
+  custom = SD.open(F("cust.txt"));
   while (custom.available() && place < read_to_character) {
     ch = custom.read();
   }
