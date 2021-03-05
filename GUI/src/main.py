@@ -3,9 +3,9 @@
 # main and GUI for ISWSD
 
 import sys
-from PyQt5.QtWidgets import QMainWindow, QApplication, QPushButton, QWidget, QAction, QTabWidget,QVBoxLayout,QRadioButton,QLabel,QLineEdit
+from PyQt5.QtWidgets import QMainWindow,QApplication,QPushButton,QWidget,QAction,QTabWidget,QVBoxLayout,QRadioButton,QLabel,QLineEdit,QComboBox,QFormLayout
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import pyqtSlot,Qt
 
 class App(QMainWindow):
 
@@ -60,8 +60,44 @@ class MyTableWidget(QWidget):
         self.pushButton1 = QPushButton("Ok")
         self.tab1.layout.addWidget(self.pushButton1)
 
+        self.tab1bottom = QLabel("Status here")
+        self.tab1.layout.addWidget(self.tab1bottom)
+
         self.tab1.setLayout(self.tab1.layout)
+
+        # Create second tab
+        self.tab2.buttonlayout = QVBoxLayout(self)
+        self.tab2.layout = QFormLayout(self)
+        self.tab2.layout.setLabelAlignment(Qt.AlignLeft)
+
+        self.radiobutton3 = QRadioButton("Upload existing")
+        self.radiobutton3.setChecked(True)
+        self.dropdown = QComboBox()
+
+        self.radiobutton4 = QRadioButton("Generate new")
+
+        self.tab2.layout.addRow(self.radiobutton3,self.dropdown)
+        self.tab2.layout.addRow(self.radiobutton4,QLabel(""))
+
+        self.char1 = QLineEdit()
+        self.char1.setMaxLength(20)
+        self.char2 = QLineEdit()
+        self.char2.setMaxLength(11)
+        self.char3 = QLineEdit()
+        self.char3.setMaxLength(11)
+
+        self.tab2.layout.addRow(QLabel("Survey name"),self.char1)
+        self.tab2.layout.addRow(QLabel("Zero point"),self.char2)
+        self.tab2.layout.addRow(QLabel("Point 1"),self.char3)
+
+        self.pushButton2 = QPushButton("Ok")
+
+        self.tab2bottom = QLabel("Status here")
         
+        self.tab2.buttonlayout.addLayout(self.tab2.layout)
+        self.tab2.buttonlayout.addWidget(self.pushButton2)
+        self.tab2.buttonlayout.addWidget(self.tab2bottom)
+        self.tab2.setLayout(self.tab2.buttonlayout)
         # Add tabs to widget
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
