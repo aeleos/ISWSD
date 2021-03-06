@@ -18,8 +18,8 @@ class App(QMainWindow):
         self.title = 'Survey Altimeter Data Manager'
         self.left = 0
         self.top = 0
-        self.width = 300
-        self.height = 200
+        self.width = 500
+        self.height = 400
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
         
@@ -39,7 +39,7 @@ class MyTableWidget(QWidget):
         self.tabs = QTabWidget()
         self.tab1 = QWidget()
         self.tab2 = QWidget()
-        self.tabs.resize(300,200)
+        self.tabs.resize(500,400)
         
         # Add tabs
         self.tabs.addTab(self.tab1,"Offload Data")
@@ -53,7 +53,7 @@ class MyTableWidget(QWidget):
 
         # SD CARD PATH
 
-        self.labelT1 = QLabel("Path to SD card")
+        self.labelT1 = QLabel("Path to SD card:")
         self.tab1.layout.addWidget(self.labelT1)
 
         self.filepathT1 = QLineEdit()
@@ -61,7 +61,7 @@ class MyTableWidget(QWidget):
 
         # DATA PATH
 
-        self.label = QLabel("Path to save")
+        self.label = QLabel("Path to save:")
         self.tab1.layout.addWidget(self.label)
 
         self.radiobutton1 = QRadioButton("Use default")
@@ -95,7 +95,7 @@ class MyTableWidget(QWidget):
 
         # SD CARD PATH
 
-        self.labelT2 = QLabel("Path to SD card")
+        self.labelT2 = QLabel("Path to SD card:")
         self.filepathT2 = QLineEdit()
 
         self.tab2.layout = QFormLayout(self)
@@ -122,7 +122,6 @@ class MyTableWidget(QWidget):
         self.scroll.setWidgetResizable(True)
 
         self.char = []
-        self.charcount = 3
         self.char.append(QLineEdit())
         self.char[0].setMaxLength(20)
         self.char.append(QLineEdit())
@@ -132,12 +131,12 @@ class MyTableWidget(QWidget):
 
         self.tab2.layout.addRow(QLabel("Survey name"),self.char[0])
         self.tab2.layout.addRow(QLabel("Zero point"),self.char[1])
-        self.tab2.layout.addRow(QLabel("Point 1"),self.char[2])
+        for x in range(1,51):
+            self.char.append(QLineEdit())
+            self.char[x+1].setMaxLength(11)
+            self.tab2.layout.addRow(QLabel("Point "+str(x)),self.char[x+1])
 
         self.scroll.setWidget(self.groupBox)
-
-        self.pushButton15 = QPushButton("Add point")
-        self.pushButton15.clicked.connect(self.on_click_addpoint)
 
         self.pushButton2 = QPushButton("Ok")
 
@@ -148,7 +147,6 @@ class MyTableWidget(QWidget):
         self.tab2.buttonlayout.addWidget(self.labelT2)
         self.tab2.buttonlayout.addWidget(self.filepathT2)
         self.tab2.buttonlayout.addWidget(self.scroll)
-        self.tab2.buttonlayout.addWidget(self.pushButton15)
         self.tab2.buttonlayout.addWidget(self.pushButton2)
         self.tab2.buttonlayout.addWidget(self.tab2bottom)
         self.tab2.setLayout(self.tab2.buttonlayout)
@@ -158,18 +156,10 @@ class MyTableWidget(QWidget):
         
     @pyqtSlot()
     def on_click(self):
+        self.tab1.filepathT1.read
         print("\n")
         for currentQTableWidgetItem in self.tableWidget.selectedItems():
             print(currentQTableWidgetItem.row(), currentQTableWidgetItem.column(), currentQTableWidgetItem.text())
-
-    def on_click_addpoint(self):
-        if self.charcount < 52:
-            self.char.append(QLineEdit())
-            self.char[self.charcount].setMaxLength(11)
-            self.tab2.layout.addRow(QLabel("Point "+str(self.charcount-1)),self.char[self.charcount])
-            self.charcount = self.charcount + 1
-
-
 
 
         
