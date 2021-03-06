@@ -163,10 +163,11 @@ class MyTableWidget(QWidget):
             print(currentQTableWidgetItem.row(), currentQTableWidgetItem.column(), currentQTableWidgetItem.text())
 
     def on_click_addpoint(self):
-        self.char.append(QLineEdit())
-        self.char[self.charcount].setMaxLength(11)
-        self.tab2.layout.addRow(QLabel("Point "+str(self.charcount-1)),self.char[self.charcount])
-        self.charcount = self.charcount + 1
+        if self.charcount < 52:
+            self.char.append(QLineEdit())
+            self.char[self.charcount].setMaxLength(11)
+            self.tab2.layout.addRow(QLabel("Point "+str(self.charcount-1)),self.char[self.charcount])
+            self.charcount = self.charcount + 1
 
 
 

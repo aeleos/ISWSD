@@ -111,7 +111,7 @@ void setup()
   si.meas = 0;
   si.card = (bool)digitalRead(CD_PIN);
   si.gps_override = 0;
-  si.zero_count = 0;
+  si.zero_count = 1;
 
   if (! si.card){
     delete data;
