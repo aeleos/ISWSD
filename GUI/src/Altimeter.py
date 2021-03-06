@@ -33,12 +33,12 @@ class Altimeter:
     def get_cust_files(self):
         self.custom_files = os.listdir(self.custom_path)
         for x in range(len(self.custom_files)):
-            newString = ''
+            new_string = ''
             l = 0
             while self.custom_files[x][l] != '.':
-                newString = newString + self.custom_files[x][l]
+                new_string = new_string + self.custom_files[x][l]
                 l = l+1
-            self.custom_files[x]= newString
+            self.custom_files[x]= new_string
 
     def get_data_path(self):
         p = os.getcwd()

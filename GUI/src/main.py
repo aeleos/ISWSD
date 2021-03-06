@@ -51,55 +51,54 @@ class MyTableWidget(QWidget):
 
         self.tab1.layout = QVBoxLayout(self)
 
-        # SD CARD PATH
+        # SD CARD PATH        self.tab1.filepathT1.read
 
-        self.labelT1 = QLabel("Path to SD card:")
-        self.tab1.layout.addWidget(self.labelT1)
+        self.tab1.cardLabel= QLabel("Path to SD card:")
+        self.tab1.layout.addWidget(self.tab1.cardLabel)
 
-        self.filepathT1 = QLineEdit()
-        self.filepathT1.textChanged.connect(self.t1CardPathChanged)
-        self.tab1.layout.addWidget(self.filepathT1)
+        self.tab1.cardPath = QLineEdit()
+        self.tab1.cardPath.textChanged.connect(self.t1CardPathChanged)
+        self.tab1.layout.addWidget(self.tab1.cardPath)
 
         # SCROLL AREA
-        self.scroll1Layout = QVBoxLayout()
-        self.groupBox1 = QGroupBox()
-        self.groupBox1.setLayout(self.scroll1Layout)
-        self.scroll1 = QScrollArea()
-        self.scroll1.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scroll1.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scroll1.setWidgetResizable(True)
-        self.tab1.scroll1Buffer = QLabel()
+        self.tab1.scrollLayout = QVBoxLayout()
+        self.tab1.groupBox = QGroupBox()
+        self.tab1.groupBox.setLayout(self.tab1.scrollLayout)
+        self.tab1.scroll = QScrollArea()
+        self.tab1.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.tab1.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.tab1.scroll.setWidgetResizable(True)
+        self.tab1.scrollBuffer = QLabel()
 
         # DATA PATH
 
-        self.label = QLabel("Path to save:")
-        self.scroll1Layout.addWidget(self.label)
+        self.tab1.saveLabel = QLabel("Path to save:")
+        self.tab1.scrollLayout.addWidget(self.tab1.saveLabel)
 
-        self.radiobutton1 = QRadioButton("Use default")
-        self.radiobutton1.setChecked(True)
-        self.scroll1Layout.addWidget(self.radiobutton1)
+        self.tab1.radioButton1 = QRadioButton("Use default")
+        self.tab1.radioButton1.setChecked(True)
+        self.tab1.scrollLayout.addWidget(self.tab1.radioButton1)
 
-        self.radiobutton2 = QRadioButton("Use custom")
-        self.scroll1Layout.addWidget(self.radiobutton2)
+        self.tab1.radioButton2 = QRadioButton("Use custom")
+        self.tab1.scrollLayout.addWidget(self.tab1.radioButton2)
 
-        self.filepath = QLineEdit()
-        self.filepath.setReadOnly(self.radiobutton1.isChecked())
-        self.scroll1Layout.addWidget(self.filepath)
-        self.scroll1Layout.addWidget(self.tab1.scroll1Buffer,60)    
+        self.tab1.dataPath = QLineEdit()
+        self.tab1.scrollLayout.addWidget(self.tab1.dataPath)
+        self.tab1.scrollLayout.addWidget(self.tab1.scrollBuffer,60)    
 
-        #self.scroll1Layout.setRowStretch(4,7)
+        #self.tab1.scrollLayout.setRowStretch(4,7)
 
-        self.tab1.layout.addWidget(self.groupBox1)
+        self.tab1.layout.addWidget(self.tab1.groupBox)
 
         # PUSH BUTTON TO EXECUTE
 
-        self.pushButton1 = QPushButton("Ok")
-        self.tab1.layout.addWidget(self.pushButton1)
+        self.tab1.enter = QPushButton("Ok")
+        self.tab1.layout.addWidget(self.tab1.enter)
 
         # STATUS TEXT
 
-        self.tab1bottom = QLabel("Status here")
-        self.tab1.layout.addWidget(self.tab1bottom)
+        self.tab1.status = QLabel("Status here")
+        self.tab1.layout.addWidget(self.tab1.status)
 
         self.tab1.setLayout(self.tab1.layout)
 
@@ -107,86 +106,88 @@ class MyTableWidget(QWidget):
         # Second tab
         ##########################
 
-        self.tab2.buttonlayout = QVBoxLayout(self)
+        self.tab2.layout = QVBoxLayout(self)
 
         # SD CARD PATH
 
-        self.labelT2 = QLabel("Path to SD card:")
-        self.filepathT2 = QLineEdit()
-        self.filepathT2.textChanged.connect(self.t2CardPathChanged)
+        self.tab2.cardLabel = QLabel("Path to SD card:")
+        self.tab2.cardPath = QLineEdit()
+        self.tab2.cardPath.textChanged.connect(self.t2CardPathChanged)
 
-        self.tab2.layout = QFormLayout(self)
-        self.tab2.layout.setLabelAlignment(Qt.AlignLeft)
+        self.tab2.scrollLayout = QFormLayout(self)
+        self.tab2.scrollLayout.setLabelAlignment(Qt.AlignLeft)
 
         # CUSTOM OPTIONS
 
-        self.radiobutton3 = QRadioButton("Upload existing")
-        self.radiobutton3.setChecked(True)
-        self.dropdown = QComboBox()
-        self.dropdown.addItems(alt.custom_files)
+        self.tab2.radioButton3 = QRadioButton("Upload existing")
+        self.tab2.radioButton3.setChecked(True)
+        self.tab2.customDropdown = QComboBox()
+        self.tab2.customDropdown.addItems(alt.custom_files)
 
-        self.radiobutton4 = QRadioButton("Generate new")
+        self.tab2.radioButton4 = QRadioButton("Generate new")
 
-        self.tab2.layout.addRow(self.radiobutton3,self.dropdown)
-        self.tab2.layout.addRow(self.radiobutton4,QLabel(""))
+        self.tab2.scrollLayout.addRow(self.tab2.radioButton3,self.tab2.customDropdown)
+        self.tab2.scrollLayout.addRow(self.tab2.radioButton4,QLabel(""))
 
         # SCROLL AREA
-        self.groupBox2 = QGroupBox()
-        self.groupBox2.setLayout(self.tab2.layout)
-        self.scroll = QScrollArea()
-        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scroll.setWidgetResizable(True)
+        self.tab2.groupBox = QGroupBox()
+        self.tab2.groupBox.setLayout(self.tab2.scrollLayout)
+        self.tab2.scroll = QScrollArea()
+        self.tab2.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.tab2.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.tab2.scroll.setWidgetResizable(True)
 
-        self.char = []
-        self.char.append(QLineEdit())
-        self.char[0].setMaxLength(20)
-        self.char.append(QLineEdit())
-        self.char[1].setMaxLength(11)
-        self.char.append(QLineEdit())
-        self.char[2].setMaxLength(11)
+        self.tab2.char = []
+        self.tab2.char.append(QLineEdit())
+        self.tab2.char[0].setMaxLength(20)
+        self.tab2.char.append(QLineEdit())
+        self.tab2.char[1].setMaxLength(11)
+        self.tab2.char.append(QLineEdit())
+        self.tab2.char[2].setMaxLength(11)
 
-        self.tab2.layout.addRow(QLabel("Survey name"),self.char[0])
-        self.tab2.layout.addRow(QLabel("Zero point"),self.char[1])
+        self.tab2.scrollLayout.addRow(QLabel("Survey name"),self.tab2.char[0])
+        self.tab2.scrollLayout.addRow(QLabel("Zero point"),self.tab2.char[1])
         for x in range(1,51):
-            self.char.append(QLineEdit())
-            self.char[x+1].setMaxLength(11)
-            self.tab2.layout.addRow(QLabel("Point "+str(x)),self.char[x+1])
+            self.tab2.char.append(QLineEdit())
+            self.tab2.char[x+1].setMaxLength(11)
+            self.tab2.scrollLayout.addRow(QLabel("Point "+str(x)),self.tab2.char[x+1])
 
-        self.scroll.setWidget(self.groupBox2)
+        self.tab2.scroll.setWidget(self.tab2.groupBox)
 
-        self.pushButton2 = QPushButton("Ok")
+        self.tab2.enter = QPushButton("Ok")
 
-        self.tab2bottom = QLabel("Status here")
+        self.tab2.status = QLabel("Status here")
 
         # Final SETUP TAB 2
         
-        self.tab2.buttonlayout.addWidget(self.labelT2)
-        self.tab2.buttonlayout.addWidget(self.filepathT2)
-        self.tab2.buttonlayout.addWidget(self.scroll)
-        self.tab2.buttonlayout.addWidget(self.pushButton2)
-        self.tab2.buttonlayout.addWidget(self.tab2bottom)
-        self.tab2.setLayout(self.tab2.buttonlayout)
+        self.tab2.layout.addWidget(self.tab2.cardLabel)
+        self.tab2.layout.addWidget(self.tab2.cardPath)
+        self.tab2.layout.addWidget(self.tab2.scroll)
+        self.tab2.layout.addWidget(self.tab2.enter)
+        self.tab2.layout.addWidget(self.tab2.status)
+        self.tab2.setLayout(self.tab2.layout)
         # Add tabs to widget
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
         
     @pyqtSlot()
     def on_click(self):
-        self.tab1.filepathT1.read
         print("\n")
         for currentQTableWidgetItem in self.tableWidget.selectedItems():
             print(currentQTableWidgetItem.row(), currentQTableWidgetItem.column(), currentQTableWidgetItem.text())
 
     def t1CardPathChanged(self):
-        self.filepathT2.blockSignals(True)
-        self.filepathT2.setText(self.filepathT1.text())
-        self.filepathT2.blockSignals(False)
+        self.tab2.cardPath.blockSignals(True)
+        self.tab2.cardPath.setText(self.tab1.cardPath.text())
+        self.tab2.cardPath.blockSignals(False)
 
     def t2CardPathChanged(self):
-        self.filepathT1.blockSignals(True)
-        self.filepathT1.setText(self.filepathT2.text())
-        self.filepathT1.blockSignals(False)
+        self.tab1.cardPath.blockSignals(True)
+        self.tab1.cardPath.setText(self.tab2.cardPath.text())
+        self.tab1.cardPath.blockSignals(False)
+
+    def createCustom(self):
+        l = 0
 
 
         
