@@ -57,23 +57,39 @@ class MyTableWidget(QWidget):
         self.tab1.layout.addWidget(self.labelT1)
 
         self.filepathT1 = QLineEdit()
+        self.filepathT1.textChanged.connect(self.t1CardPathChanged)
         self.tab1.layout.addWidget(self.filepathT1)
+
+        # SCROLL AREA
+        self.scroll1Layout = QVBoxLayout()
+        self.groupBox1 = QGroupBox()
+        self.groupBox1.setLayout(self.scroll1Layout)
+        self.scroll1 = QScrollArea()
+        self.scroll1.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll1.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll1.setWidgetResizable(True)
+        self.tab1.scroll1Buffer = QLabel()
 
         # DATA PATH
 
         self.label = QLabel("Path to save:")
-        self.tab1.layout.addWidget(self.label)
+        self.scroll1Layout.addWidget(self.label)
 
         self.radiobutton1 = QRadioButton("Use default")
         self.radiobutton1.setChecked(True)
-        self.tab1.layout.addWidget(self.radiobutton1)
+        self.scroll1Layout.addWidget(self.radiobutton1)
 
         self.radiobutton2 = QRadioButton("Use custom")
-        self.tab1.layout.addWidget(self.radiobutton2)
+        self.scroll1Layout.addWidget(self.radiobutton2)
 
         self.filepath = QLineEdit()
         self.filepath.setReadOnly(self.radiobutton1.isChecked())
-        self.tab1.layout.addWidget(self.filepath)
+        self.scroll1Layout.addWidget(self.filepath)
+        self.scroll1Layout.addWidget(self.tab1.scroll1Buffer,60)    
+
+        #self.scroll1Layout.setRowStretch(4,7)
+
+        self.tab1.layout.addWidget(self.groupBox1)
 
         # PUSH BUTTON TO EXECUTE
 
@@ -97,6 +113,7 @@ class MyTableWidget(QWidget):
 
         self.labelT2 = QLabel("Path to SD card:")
         self.filepathT2 = QLineEdit()
+        self.filepathT2.textChanged.connect(self.t2CardPathChanged)
 
         self.tab2.layout = QFormLayout(self)
         self.tab2.layout.setLabelAlignment(Qt.AlignLeft)
@@ -114,8 +131,8 @@ class MyTableWidget(QWidget):
         self.tab2.layout.addRow(self.radiobutton4,QLabel(""))
 
         # SCROLL AREA
-        self.groupBox = QGroupBox()
-        self.groupBox.setLayout(self.tab2.layout)
+        self.groupBox2 = QGroupBox()
+        self.groupBox2.setLayout(self.tab2.layout)
         self.scroll = QScrollArea()
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -136,7 +153,7 @@ class MyTableWidget(QWidget):
             self.char[x+1].setMaxLength(11)
             self.tab2.layout.addRow(QLabel("Point "+str(x)),self.char[x+1])
 
-        self.scroll.setWidget(self.groupBox)
+        self.scroll.setWidget(self.groupBox2)
 
         self.pushButton2 = QPushButton("Ok")
 
@@ -160,6 +177,16 @@ class MyTableWidget(QWidget):
         print("\n")
         for currentQTableWidgetItem in self.tableWidget.selectedItems():
             print(currentQTableWidgetItem.row(), currentQTableWidgetItem.column(), currentQTableWidgetItem.text())
+
+    def t1CardPathChanged(self):
+        self.filepathT2.blockSignals(True)
+        self.filepathT2.setText(self.filepathT1.text())
+        self.filepathT2.blockSignals(False)
+
+    def t2CardPathChanged(self):
+        self.filepathT1.blockSignals(True)
+        self.filepathT1.setText(self.filepathT2.text())
+        self.filepathT1.blockSignals(False)
 
 
         
