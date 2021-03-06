@@ -3,9 +3,13 @@
 # main and GUI for ISWSD
 
 import sys
-from PyQt5.QtWidgets import QMainWindow,QApplication,QPushButton,QWidget,QAction,QTabWidget,QVBoxLayout,QRadioButton,QLabel,QLineEdit,QComboBox,QFormLayout
+from PyQt5.QtWidgets import QMainWindow,QApplication,QPushButton,QWidget,QAction,QTabWidget,QVBoxLayout,QRadioButton,QLabel,QLineEdit,QComboBox,QFormLayout,QScrollArea,QGroupBox
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSlot,Qt
+
+from Altimeter import *
+
+alt = Altimeter()
 
 class App(QMainWindow):
 
@@ -29,8 +33,9 @@ class MyTableWidget(QWidget):
     def __init__(self, parent):
         super(QWidget, self).__init__(parent)
         self.layout = QVBoxLayout(self)
-        
+        ##########################
         # Initialize tab screen
+        ##########################
         self.tabs = QTabWidget()
         self.tab1 = QWidget()
         self.tab2 = QWidget()
@@ -40,10 +45,23 @@ class MyTableWidget(QWidget):
         self.tabs.addTab(self.tab1,"Offload Data")
         self.tabs.addTab(self.tab2,"Upload Custom")
         
-        # Create first tab
+        ##########################
+        # First tab
+        ##########################
+
         self.tab1.layout = QVBoxLayout(self)
 
-        self.label = QLabel("Select file path")
+        # SD CARD PATH
+
+        self.labelT1 = QLabel("Path to SD card")
+        self.tab1.layout.addWidget(self.labelT1)
+
+        self.filepathT1 = QLineEdit()
+        self.tab1.layout.addWidget(self.filepathT1)
+
+        # DATA PATH
+
+        self.label = QLabel("Path to save")
         self.tab1.layout.addWidget(self.label)
 
         self.radiobutton1 = QRadioButton("Use default")
@@ -57,44 +75,80 @@ class MyTableWidget(QWidget):
         self.filepath.setReadOnly(self.radiobutton1.isChecked())
         self.tab1.layout.addWidget(self.filepath)
 
+        # PUSH BUTTON TO EXECUTE
+
         self.pushButton1 = QPushButton("Ok")
         self.tab1.layout.addWidget(self.pushButton1)
+
+        # STATUS TEXT
 
         self.tab1bottom = QLabel("Status here")
         self.tab1.layout.addWidget(self.tab1bottom)
 
         self.tab1.setLayout(self.tab1.layout)
 
-        # Create second tab
+        ##########################
+        # Second tab
+        ##########################
+
         self.tab2.buttonlayout = QVBoxLayout(self)
+
+        # SD CARD PATH
+
+        self.labelT2 = QLabel("Path to SD card")
+        self.filepathT2 = QLineEdit()
+
         self.tab2.layout = QFormLayout(self)
         self.tab2.layout.setLabelAlignment(Qt.AlignLeft)
+
+        # CUSTOM OPTIONS
 
         self.radiobutton3 = QRadioButton("Upload existing")
         self.radiobutton3.setChecked(True)
         self.dropdown = QComboBox()
+        self.dropdown.addItems(alt.custom_files)
 
         self.radiobutton4 = QRadioButton("Generate new")
 
         self.tab2.layout.addRow(self.radiobutton3,self.dropdown)
         self.tab2.layout.addRow(self.radiobutton4,QLabel(""))
 
-        self.char1 = QLineEdit()
-        self.char1.setMaxLength(20)
-        self.char2 = QLineEdit()
-        self.char2.setMaxLength(11)
-        self.char3 = QLineEdit()
-        self.char3.setMaxLength(11)
+        # SCROLL AREA
+        self.groupBox = QGroupBox()
+        self.groupBox.setLayout(self.tab2.layout)
+        self.scroll = QScrollArea()
+        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll.setWidgetResizable(True)
 
-        self.tab2.layout.addRow(QLabel("Survey name"),self.char1)
-        self.tab2.layout.addRow(QLabel("Zero point"),self.char2)
-        self.tab2.layout.addRow(QLabel("Point 1"),self.char3)
+        self.char = []
+        self.charcount = 3
+        self.char.append(QLineEdit())
+        self.char[0].setMaxLength(20)
+        self.char.append(QLineEdit())
+        self.char[1].setMaxLength(11)
+        self.char.append(QLineEdit())
+        self.char[2].setMaxLength(11)
+
+        self.tab2.layout.addRow(QLabel("Survey name"),self.char[0])
+        self.tab2.layout.addRow(QLabel("Zero point"),self.char[1])
+        self.tab2.layout.addRow(QLabel("Point 1"),self.char[2])
+
+        self.scroll.setWidget(self.groupBox)
+
+        self.pushButton15 = QPushButton("Add point")
+        self.pushButton15.clicked.connect(self.on_click_addpoint)
 
         self.pushButton2 = QPushButton("Ok")
 
         self.tab2bottom = QLabel("Status here")
+
+        # Final SETUP TAB 2
         
-        self.tab2.buttonlayout.addLayout(self.tab2.layout)
+        self.tab2.buttonlayout.addWidget(self.labelT2)
+        self.tab2.buttonlayout.addWidget(self.filepathT2)
+        self.tab2.buttonlayout.addWidget(self.scroll)
+        self.tab2.buttonlayout.addWidget(self.pushButton15)
         self.tab2.buttonlayout.addWidget(self.pushButton2)
         self.tab2.buttonlayout.addWidget(self.tab2bottom)
         self.tab2.setLayout(self.tab2.buttonlayout)
@@ -108,6 +162,16 @@ class MyTableWidget(QWidget):
         for currentQTableWidgetItem in self.tableWidget.selectedItems():
             print(currentQTableWidgetItem.row(), currentQTableWidgetItem.column(), currentQTableWidgetItem.text())
 
+    def on_click_addpoint(self):
+        self.char.append(QLineEdit())
+        self.char[self.charcount].setMaxLength(11)
+        self.tab2.layout.addRow(QLabel("Point "+str(self.charcount-1)),self.char[self.charcount])
+        self.charcount = self.charcount + 1
+
+
+
+
+        
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = App()
