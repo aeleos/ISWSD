@@ -49,9 +49,9 @@ class MyTableWidget(QWidget):
         # First tab
         ##########################
 
-        self.tab1.layout = QVBoxLayout(self)
+        self.tab1.layout = QVBoxLayout(self.tab1)
 
-        # SD CARD PATH        self.tab1.filepathT1.read
+        # SD CARD PATH  
 
         self.tab1.cardLabel= QLabel("Path to SD card:")
         self.tab1.layout.addWidget(self.tab1.cardLabel)
@@ -86,8 +86,6 @@ class MyTableWidget(QWidget):
         self.tab1.scrollLayout.addWidget(self.tab1.dataPath)
         self.tab1.scrollLayout.addWidget(self.tab1.scrollBuffer,60)    
 
-        #self.tab1.scrollLayout.setRowStretch(4,7)
-
         self.tab1.layout.addWidget(self.tab1.groupBox)
 
         # PUSH BUTTON TO EXECUTE
@@ -97,16 +95,14 @@ class MyTableWidget(QWidget):
 
         # STATUS TEXT
 
-        self.tab1.status = QLabel("Status here")
+        self.tab1.status = QLabel("")
         self.tab1.layout.addWidget(self.tab1.status)
-
-        self.tab1.setLayout(self.tab1.layout)
 
         ##########################
         # Second tab
         ##########################
 
-        self.tab2.layout = QVBoxLayout(self)
+        self.tab2.layout = QVBoxLayout(self.tab2)
 
         # SD CARD PATH
 
@@ -114,25 +110,26 @@ class MyTableWidget(QWidget):
         self.tab2.cardPath = QLineEdit()
         self.tab2.cardPath.textChanged.connect(self.t2CardPathChanged)
 
-        self.tab2.scrollLayout = QFormLayout(self)
+        self.tab2.scroll = QScrollArea()
+
+        self.tab2.scrollLayout = QFormLayout(self.tab2.scroll)
         self.tab2.scrollLayout.setLabelAlignment(Qt.AlignLeft)
 
         # CUSTOM OPTIONS
 
-        self.tab2.radioButton3 = QRadioButton("Upload existing")
-        self.tab2.radioButton3.setChecked(True)
+        self.tab2.radioButton1 = QRadioButton("Upload existing")
+        self.tab2.radioButton1.setChecked(True)
         self.tab2.customDropdown = QComboBox()
         self.tab2.customDropdown.addItems(alt.custom_files)
 
-        self.tab2.radioButton4 = QRadioButton("Generate new")
+        self.tab2.radioButton2= QRadioButton("Generate new")
 
-        self.tab2.scrollLayout.addRow(self.tab2.radioButton3,self.tab2.customDropdown)
-        self.tab2.scrollLayout.addRow(self.tab2.radioButton4,QLabel(""))
+        self.tab2.scrollLayout.addRow(self.tab2.radioButton1,self.tab2.customDropdown)
+        self.tab2.scrollLayout.addRow(self.tab2.radioButton2,QLabel(""))
 
         # SCROLL AREA
         self.tab2.groupBox = QGroupBox()
         self.tab2.groupBox.setLayout(self.tab2.scrollLayout)
-        self.tab2.scroll = QScrollArea()
         self.tab2.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.tab2.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.tab2.scroll.setWidgetResizable(True)
@@ -155,8 +152,9 @@ class MyTableWidget(QWidget):
         self.tab2.scroll.setWidget(self.tab2.groupBox)
 
         self.tab2.enter = QPushButton("Ok")
+        self.tab2.enter.clicked.connect(self.createCustom)
 
-        self.tab2.status = QLabel("Status here")
+        self.tab2.status = QLabel("")
 
         # Final SETUP TAB 2
         
@@ -165,10 +163,9 @@ class MyTableWidget(QWidget):
         self.tab2.layout.addWidget(self.tab2.scroll)
         self.tab2.layout.addWidget(self.tab2.enter)
         self.tab2.layout.addWidget(self.tab2.status)
-        self.tab2.setLayout(self.tab2.layout)
+        
         # Add tabs to widget
         self.layout.addWidget(self.tabs)
-        self.setLayout(self.layout)
         
     @pyqtSlot()
     def on_click(self):
@@ -187,7 +184,24 @@ class MyTableWidget(QWidget):
         self.tab1.cardPath.blockSignals(False)
 
     def createCustom(self):
-        l = 0
+        alt.set_card_path(self.tab2.cardPath.text())
+        if (self.tab2.radioButton1.isChecked()): # upload existing file
+            alt.custom_extension = self.tab2.customDropdown.currentText() + ".txt"
+            success = alt.upload_existing_custom()
+        else:  # generate new file
+            self.tab2.customDropdown.addItem(self.tab2.char[0].text())
+            for x in range(52):
+                alt.custom_input.append(self.tab2.char[x].text())
+                self.tab2.char[x].setText("")
+            success = alt.generate_custom()
+        if (success == -1):
+            self.tab2.status.setText("SD card path does not exist")
+        elif (success == -2):
+            self.tab2.status.setText("Select an existing custom file")
+
+        else:
+            self.tab2.status.setText("Success")
+
 
 
         
