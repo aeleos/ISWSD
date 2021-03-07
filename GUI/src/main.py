@@ -77,14 +77,17 @@ class MyTableWidget(QWidget):
 
         self.tab1.radioButton1 = QRadioButton("Use default")
         self.tab1.radioButton1.setChecked(True)
+        self.tab1.radioButton1.toggled.connect(self.tab1Select)
         self.tab1.scrollLayout.addWidget(self.tab1.radioButton1)
 
         self.tab1.radioButton2 = QRadioButton("Use custom")
+        self.tab1.radioButton2.toggled.connect(self.tab1Select)
         self.tab1.scrollLayout.addWidget(self.tab1.radioButton2)
 
         self.tab1.dataPath = QLineEdit()
         self.tab1.scrollLayout.addWidget(self.tab1.dataPath)
-        self.tab1.scrollLayout.addWidget(self.tab1.scrollBuffer,60)    
+        self.tab1.scrollLayout.addWidget(self.tab1.scrollBuffer,60)   
+        self.tab1Select() 
 
         self.tab1.layout.addWidget(self.tab1.groupBox)
 
@@ -120,9 +123,14 @@ class MyTableWidget(QWidget):
         self.tab2.radioButton1 = QRadioButton("Upload existing")
         self.tab2.radioButton1.setChecked(True)
         self.tab2.customDropdown = QComboBox()
+        self.tab2.customDropdown.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+        self.tab2.customDropdown.addItem("")
         self.tab2.customDropdown.addItems(alt.custom_files)
 
         self.tab2.radioButton2= QRadioButton("Generate new")
+
+        self.tab2.radioButton1.toggled.connect(self.tab2Select)
+        self.tab2.radioButton2.toggled.connect(self.tab2Select)
 
         self.tab2.scrollLayout.addRow(self.tab2.radioButton1,self.tab2.customDropdown)
         self.tab2.scrollLayout.addRow(self.tab2.radioButton2,QLabel(""))
@@ -157,6 +165,7 @@ class MyTableWidget(QWidget):
         self.tab2.status = QLabel("")
 
         # Final SETUP TAB 2
+        self.tab2Select()
         
         self.tab2.layout.addWidget(self.tab2.cardLabel)
         self.tab2.layout.addWidget(self.tab2.cardPath)
@@ -201,6 +210,23 @@ class MyTableWidget(QWidget):
 
         else:
             self.tab2.status.setText("Success")
+
+    def tab1Select(self):
+        if self.tab1.radioButton1.isChecked():
+            self.tab1.dataPath.setReadOnly(True)
+        else:
+            self.tab1.dataPath.setReadOnly(False)
+
+    def tab2Select(self):
+        if self.tab2.radioButton1.isChecked():
+            self.tab2.customDropdown.setEnabled(True)
+            for x in range(52):
+                self.tab2.char[x].setReadOnly(True)
+        else:
+            self.tab2.customDropdown.setEnabled(False)
+            for x in range(52):
+                self.tab2.char[x].setReadOnly(False)
+
 
 
 
