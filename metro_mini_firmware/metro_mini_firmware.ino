@@ -146,8 +146,8 @@ void setup()
   //Serial.print(F("Config... "));
 
   // Setup highest precision
+  dps.setMode(DPS310_CONT_PRESSURE);
   dps.configurePressure(DPS310_64HZ, DPS310_64SAMPLES);
-  dps.configureTemperature(DPS310_64HZ, DPS310_64SAMPLES);
 
   //Serial.println(F("Done"));
 
@@ -265,7 +265,7 @@ void loop()
         sensors_event_t temp_event, pressure_event;
 
         while (!dps.temperatureAvailable() || !dps.pressureAvailable()) {
-          return; // wait until there's something to read
+          continue; // wait until there's something to read
         }
 
         dps.getEvents(&temp_event, &pressure_event);
