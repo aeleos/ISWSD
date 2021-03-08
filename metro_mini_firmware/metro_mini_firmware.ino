@@ -37,10 +37,10 @@
 #include "pinout.h"
 #include <SD.h>
 
-void freeRam () 
+void freeRam ()
 {
-  extern int __heap_start, *__brkval; 
-  int v; 
+  extern int __heap_start, *__brkval;
+  int v;
   Serial.print(F("Free RAM: "));
   Serial.println((int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval));
   return;
@@ -113,24 +113,24 @@ void setup()
   si.gps_override = 0;
   si.zero_count = 1;
 
-  if (! si.card){
+  if (! si.card) {
     delete data;
     //Serial.println(F("No card, destructing dataclass"));
   }
-  else{
+  else {
     data = new Dataset;
-    if (SD.begin(SS_PIN)){
-    si.customE = data->get_files(&si.zero_count);
-    Serial.print(F("Card with file count "));
-    Serial.println(si.zero_count);
-    //freeRam();
+    if (SD.begin(SS_PIN)) {
+      si.customE = data->get_files(&si.zero_count);
+      Serial.print(F("Card with file count "));
+      Serial.println(si.zero_count);
+      //freeRam();
     }
-    else{
+    else {
       delete data;
       Serial.println(F("Card init failed."));
       si.card = 0;
     }
-    }
+  }
 
   // Initialize GPS Software Serial
   //Serial.print(F("GPS init... "));
@@ -163,170 +163,218 @@ void setup()
 
 void loop()
 {
- // execution  
- switch(state){
-  case 0:  // no GPS lock
-  {
-    //Serial.println(F("Enter GPS Lock"));
-    delay_and_read_gps(1000);
-    if (lcd_state != 0b01000000) {lcd_state = 0b01000000; lcd.gpslock_screen();}
-    si.gps_override = (!(bool)digitalRead(YES_PIN) || si.gps_override);
-    lcd.progress_loop(11,0,1);
-    if (si.card) {data->name_file(si.custom,si.zero_count);}
-    //Serial.println(F("Exit GPS Lock"));
-    break;
-  }
-  case 1: // unset zero
-  {
-    //Serial.println(F("Enter Zero Prompt"));
-    if (lcd_state != 0b00010000){
-      if (si.customE) {lcd.clear(); si.custom = lcd.custom_select();}
-      if(si.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }
-      lcd_state = 0b00010000;
-      si.lcd_clear = 1;
-    }
-    if (!(bool)digitalRead(ZE_PIN)){
-        //Serial.println(F("HERE!"));
-        state = 4;
+  // execution
+  switch (state) {
+    case 0:  // no GPS lock
+      {
+        //Serial.println(F("Enter GPS Lock"));
+        delay_and_read_gps(1000);
+        if (lcd_state != 0b01000000) {
+          lcd_state = 0b01000000;
+          lcd.gpslock_screen();
+        }
+        si.gps_override = (!(bool)digitalRead(YES_PIN) || si.gps_override);
+        lcd.progress_loop(11, 0, 1);
+        if (si.card) {
+          data->name_file(si.custom, si.zero_count);
+        }
+        //Serial.println(F("Exit GPS Lock"));
+        break;
       }
-      //Serial.println(F("Exit zero prompt"));
-    if (state != 4) {break;}
-  }
-  case 2: // too many data points
-  {
-    if ( lcd_state != 0b00100010){
-      lcd.datapoint_max(si.zero_count);
-      lcd_state = 0b00100010; }
-    break;
-  }
-  case 3: // too many zeros
-  {
-    if (!si.custom){
-      si.zero_count = 0;
+    case 1: // unset zero
+      {
+        //Serial.println(F("Enter Zero Prompt"));
+        if (lcd_state != 0b00010000) {
+          if (si.customE) {
+            lcd.clear();
+            si.custom = lcd.custom_select();
+          }
+          if (si.custom) {
+            data->get_custom_location();
+            lcd.zero_prompt_screen(data->custom_name);
+          } else {
+            lcd.zero_prompt_screen();
+          }
+          lcd_state = 0b00010000;
+          si.lcd_clear = 1;
+        }
+        if (!(bool)digitalRead(ZE_PIN)) {
+          //Serial.println(F("HERE!"));
+          state = 4;
+        }
+        //Serial.println(F("Exit zero prompt"));
+        if (state != 4) {
+          break;
+        }
+      }
+    case 2: // too many data points
+      {
+        if ( lcd_state != 0b00100010) {
+          lcd.datapoint_max(si.zero_count);
+          lcd_state = 0b00100010;
+        }
+        break;
+      }
+    case 3: // too many zeros
+      {
+        if (!si.custom) {
+          si.zero_count = 0;
+          break;
+        }
+        if ( lcd_state != 0b00100001) {
+          lcd.zero_max(si.meas);
+          lcd_state = 0b00100001;
+        }
+        si.custom = 0;
+        si.card = 0;
+        lcd.card_overwrite();
+        break;
+      }
+    case 4: // press for zero
+      {
+        //Serial.println(F("Enter zero"));
+        if (si.card) {
+          data->reset();
+        }
+        lcd.clear();
+        si.lcd_clear = 1;
+        //Serial.print(F("Read GPS... "));
+        delay_and_read_gps(500);
+        //Serial.print(F("Data collected... "));
+        if (si.zero == 0) {
+          si.zero = 1;
+        } else {
+          si.zero_count++;
+        }
+        if (si.customE) {
+          si.custom = lcd.custom_select();
+        }
+        if (si.custom) {
+          data->get_custom_location();
+          lcd.zero_prompt_screen(data->custom_name);
+        } else {
+          lcd.zero_prompt_screen();
+        }
+        if (si.card) {
+          data->name_file(si.custom, si.zero_count);
+        }
+        //Serial.println(F("Data manip ..."));
+        //freeRam();
+
+
+        sensors_event_t temp_event, pressure_event;
+
+        while (!dps.temperatureAvailable() || !dps.pressureAvailable()) {
+          return; // wait until there's something to read
+        }
+
+        dps.getEvents(&temp_event, &pressure_event);
+        float h = pressure_event.pressure;
+
+
+        //float h = dps.readAltitude(data->get_zero_pressure());
+        long lat, lon;
+        unsigned long d = TinyGPS::GPS_INVALID_DATE, t = TinyGPS::GPS_INVALID_TIME;
+        if (! si.gps_override) {
+          gps.get_position(&lat, &lon);
+          gps.get_datetime(&d, &t);
+        }
+
+        Serial.println(h);
+
+        if (si.card) {
+          data->set_zero(lat, lon, d, t);
+        }
+
+        if (si.custom) {
+          data->get_custom_location();
+          lcd.zero_prompt_screen(data->custom_name);
+        } else {
+          lcd.print_zero(si.zero_count, lat, lon);
+        }
+        lcd_state = 0b00000000;
+        //Serial.println(F("Exit zero"));
+        break;
+      }
+    case 5: // press for measurement
+      {
+        //Serial.println(F("Enter meas"));
+        lcd.clear();
+        si.lcd_clear = 1;
+        delay_and_read_gps(500);
+
+
+        float h = dps.readAltitude(zero_hPa);
+        long lat = 0, lon = 0;
+        unsigned long d = TinyGPS::GPS_INVALID_DATE, t = TinyGPS::GPS_INVALID_TIME;
+        if (! si.gps_override) {
+          gps.get_position(&lat, &lon);
+          gps.get_datetime(&d, &t);
+        }
+
+        if (si.card) {
+          data->record_measurement(lat, lon, h, d, t);
+        }
+
+        if (si.custom) {
+          data->get_custom_location();
+          lcd.print_measurement(si.zero_count, si.meas, lat, lon, h, data->custom_name);
+        } else {
+          lcd.print_measurement(si.zero_count, si.meas, lat, lon, h);
+        }
+        lcd_state = 0b00000000;
+        si.meas++;
+        //Serial.println(F("Exit meas"));
+        break;
+      }
+    default:
+      {
+        if (lcd_state != 0b00100000) {
+          lcd.standard_screen(si.zero_count, si.meas);
+          si.lcd_clear = 1;
+          lcd_state = 0b00100000;
+        }
+      }
       break;
-    }
-    if ( lcd_state != 0b00100001){
-      lcd.zero_max(si.meas);
-      lcd_state = 0b00100001;
-    }
-    si.custom = 0;
-    si.card = 0;
-    lcd.card_overwrite();
-    break;
   }
-  case 4: // press for zero
-  {
-    //Serial.println(F("Enter zero"));
-    if (si.card){  data->reset(); }
-    lcd.clear();
-    si.lcd_clear = 1;
-    //Serial.print(F("Read GPS... "));
-    delay_and_read_gps(500);
-    //Serial.print(F("Data collected... "));
-    if (si.zero == 0){si.zero = 1;}else{si.zero_count++; }   
-    if (si.customE) {si.custom = lcd.custom_select();}
-    if(si.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else { lcd.zero_prompt_screen(); }
-    if (si.card) {data->name_file(si.custom,si.zero_count);}
-    //Serial.println(F("Data manip ..."));
-    //freeRam();
-    
 
-    sensors_event_t temp_event, pressure_event;
-  
-    while (!dps.temperatureAvailable() || !dps.pressureAvailable()) {
-      return; // wait until there's something to read
-    }
+  uint8_t num_sats = gps.satellites();
 
-      dps.getEvents(&temp_event, &pressure_event);
-      float h = pressure_event.pressure;
-   
-
-    //float h = dps.readAltitude(data->get_zero_pressure());
-    long lat, lon;
-    unsigned long d = TinyGPS::GPS_INVALID_DATE, t = TinyGPS::GPS_INVALID_TIME;
-    if (! si.gps_override){
-      gps.get_position(&lat,&lon);
-      gps.get_datetime(&d,&t);
-    }
-
-    Serial.println(h);
-      
-    if (si.card){data->set_zero(lat,lon,d,t);}
-
-    if(si.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else {lcd.print_zero(si.zero_count,lat,lon);}
-    lcd_state=0b00000000;
-    //Serial.println(F("Exit zero"));
-    break;
-  }
-  case 5: // press for measurement
-  {
-    //Serial.println(F("Enter meas"));
-    lcd.clear();
-    si.lcd_clear = 1;
-    delay_and_read_gps(500);
-
-    
-    float h = dps.readAltitude(zero_hPa);
-    long lat = 0, lon = 0;
-    unsigned long d= TinyGPS::GPS_INVALID_DATE, t = TinyGPS::GPS_INVALID_TIME;
-    if (! si.gps_override){
-      gps.get_position(&lat,&lon);
-      gps.get_datetime(&d,&t);
-    }
-      
-      if(si.card){data->record_measurement(lat,lon,h,d,t);}
-
-    if(si.custom){ data->get_custom_location(); lcd.print_measurement(si.zero_count,si.meas,lat,lon,h,data->custom_name);} else { lcd.print_measurement(si.zero_count,si.meas,lat,lon,h);}
-    lcd_state=0b00000000;
-    si.meas++;
-    //Serial.println(F("Exit meas"));
-    break;
-  }
-  default: 
-  {
-    if (lcd_state != 0b00100000){
-    lcd.standard_screen(si.zero_count,si.meas);
-    si.lcd_clear = 1;
-    lcd_state = 0b00100000;}
-  }
-    break;
- }
-
-   uint8_t num_sats = gps.satellites();
-
-lcd.top_bar(si.card,num_sats,si.lcd_clear);
-si.lcd_clear = 0;
+  lcd.top_bar(si.card, num_sats, si.lcd_clear);
+  si.lcd_clear = 0;
 
 
-// state determination
-  if ( (num_sats == TinyGPS::GPS_INVALID_SATELLITES) && (!si.gps_override)){  // no GPS lock
+  // state determination
+  if ( (num_sats == TinyGPS::GPS_INVALID_SATELLITES) && (!si.gps_override)) { // no GPS lock
     //Serial.println(num_sats);
     state = 0;
-    
+
   }
-  else if (!si.zero){ // zero is not set
+  else if (!si.zero) { // zero is not set
     state = 1;
   }
-  else if (si.meas > 50){  // too many datapoints
-     state = 2;
-    }
-  else if (si.zero_count > 99){  // too many zeros
+  else if (si.meas > 50) { // too many datapoints
+    state = 2;
+  }
+  else if (si.zero_count > 99) { // too many zeros
     state = 3;
   }
-  else if (! (bool)digitalRead(ZE_PIN)){ // if command to zero is input
+  else if (! (bool)digitalRead(ZE_PIN)) { // if command to zero is input
     state = 4;
   }
-  else if (! (bool)digitalRead(ME_PIN)){ // command to measure is input
+  else if (! (bool)digitalRead(ME_PIN)) { // command to measure is input
     state = 5;
   }
-  else {state = 6;}
+  else {
+    state = 6;
+  }
 
 }
 
 
-static void delay_and_read_gps(unsigned long ms){
+static void delay_and_read_gps(unsigned long ms) {
   unsigned long start = millis();
-  do 
+  do
   {
     while (gps_ss.available())
       gps.encode(gps_ss.read());
