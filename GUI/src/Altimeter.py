@@ -65,11 +65,13 @@ class Altimeter:
         f1 =open(custom_file,'w')
         for x in range(1,len(self.custom_input)-1):
             f1.write(self.custom_input[x]+'\n')
+        f1.write(self.custom_input[len(self.custom_input)-1])
         f1.close()
         if (out == 0):
             f2 =open(card_file,'w')
             for x in range(1,len(self.custom_input)-1):
                 f2.write(self.custom_input[x]+'\n')
+            f2.write(self.custom_input[len(self.custom_input)-1])
             f2.close()
         self.custom_input = []
         return out

@@ -200,8 +200,9 @@ class MyTableWidget(QWidget):
         else:  # generate new file
             self.tab2.customDropdown.addItem(self.tab2.char[0].text())
             for x in range(52):
-                alt.custom_input.append(self.tab2.char[x].text())
-                self.tab2.char[x].setText("")
+                if (self.tab2.char[x].text() != ""):
+                    alt.custom_input.append(self.tab2.char[x].text())
+                    self.tab2.char[x].setText("")
             success = alt.generate_custom()
         if (success == -1):
             self.tab2.status.setText("SD card path does not exist")

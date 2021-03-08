@@ -115,7 +115,7 @@ void setup()
 
   if (! si.card){
     delete data;
-    Serial.println(F("No card, destructing dataclass"));
+    //Serial.println(F("No card, destructing dataclass"));
   }
   else{
     data = new Dataset;
@@ -123,7 +123,8 @@ void setup()
     si.customE = data->get_files(&si.zero_count);
     Serial.print(F("Card with file count "));
     Serial.println(si.zero_count);
-    freeRam();}
+    //freeRam();
+    }
     else{
       delete data;
       Serial.println(F("Card init failed."));
@@ -254,12 +255,12 @@ void loop()
 
     if(si.custom){ data->get_custom_location(); lcd.zero_prompt_screen(data->custom_name);} else {lcd.print_zero(si.zero_count,lat,lon);}
     lcd_state=0b00000000;
-    Serial.println(F("Exit zero"));
+    //Serial.println(F("Exit zero"));
     break;
   }
   case 5: // press for measurement
   {
-    Serial.println(F("Enter meas"));
+    //Serial.println(F("Enter meas"));
     lcd.clear();
     si.lcd_clear = 1;
     delay_and_read_gps(500);
@@ -278,7 +279,7 @@ void loop()
     if(si.custom){ data->get_custom_location(); lcd.print_measurement(si.zero_count,si.meas,lat,lon,h,data->custom_name);} else { lcd.print_measurement(si.zero_count,si.meas,lat,lon,h);}
     lcd_state=0b00000000;
     si.meas++;
-    Serial.println(F("Exit meas"));
+    //Serial.println(F("Exit meas"));
     break;
   }
   default: 

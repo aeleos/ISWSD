@@ -5,7 +5,7 @@
 void Dataset::name_file(bool custom, uint8_t file_number){
   int i = file_number % 10;
   filename[2] = i+30;
-  (file_number>99) ? filename[1] = int((file_number-i)/10)+30 : filename[1] = 30;
+  filename[1] = int((file_number-i)/10)+30;
   (custom) ? filename[0] = 'C' : filename[0] = 'F';
   return;
 }
