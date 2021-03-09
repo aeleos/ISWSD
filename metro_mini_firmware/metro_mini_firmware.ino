@@ -85,8 +85,7 @@ struct state_indicators {
   unsigned int measurement_count : 6;
   unsigned int gps_override : 1;
   unsigned int top_bar_update: 1;
-  unsigned int last_yes_pushed : 1;
-  unsigned int last_no_pushed : 1;
+  unsigned int wait : 1;
   uint8_t zero_count;
 };
 
@@ -133,6 +132,7 @@ void setup()
   si.measurement_count = 0;
   si.card_available = (bool)digitalRead(CD_PIN);
   si.gps_override = 0;
+  si.wait = 0;
   si.zero_count = 1;
 
   if (! si.card_available) {
@@ -191,14 +191,16 @@ void loop()
   bool yes_pushed = digitalRead(YES_PIN);
   bool no_pushed = digitalRead(NO_PIN);
 
-  
+
   // execution
   switch (state) {
-    case 0:  // no GPS lock
+    case 0:
       {
-
-        delay_and_read_gps(1000);
-
+        si.wait = yes_pushed;
+        break;
+      }
+    case 1:  // no GPS lock
+      {
         if (! lcds.gps_lock ) {
           lcds.bit_clear = 0;
           lcds.gps_lock = 1;
@@ -217,7 +219,7 @@ void loop()
         break;
       }
 
-    case 1: // unset zero or too many datapoints
+    case 2: // unset zero or too many datapoints
       {
 
         if (si.custom_exists) {
@@ -242,7 +244,7 @@ void loop()
         }
       }
 
-    case 2: // too many zeros
+    case 3: // too many zeros
       {
 
         if (!si.custom_chosen) {
@@ -252,17 +254,17 @@ void loop()
 
         if (! lcds.zeropoint_limit) {
           lcd.zero_max(si.measurement_count);
-          lcds.zeropoint_limit = 0;
           lcds.zeropoint_limit = 1;
         }
 
         si.custom_chosen = 0;
         si.card_available = 0;
         si.top_bar_update = 1;
+        si.wait = 1;
         break;
       }
 
-    case 3: // press for zero
+    case 4: // press for zero
       {
 
         lcd.clear();
@@ -276,7 +278,19 @@ void loop()
         }
 
         if (si.custom_exists) {
-          si.custom_chosen = lcd.custom_select();
+          lcd.custom_select();
+          while (1) {
+            lcd.top_bar(0, 0xFF, 0);
+            if (!(bool)digitalRead(NO_PIN)) {
+              delay(PIN_DB);
+              si.custom_chosen = 1;
+            }
+            else if (!(bool)digitalRead(NO_PIN)) {
+              delay(PIN_DB);
+              si.custom_chosen = 0;
+            }
+          }
+
           if (si.custom_chosen) {
             data->get_custom_location();
             lcd.zero_prompt_screen(data->custom_name);
@@ -291,13 +305,6 @@ void loop()
           data->name_file(si.custom_chosen, si.zero_count);
         }
 
-
-        sensors_event_t temp_event, pressure_event;
-
-        while (!dps.temperatureAvailable() || !dps.pressureAvailable()) {
-          continue; // wait until there's something to read
-        }
-
         if (si.card_available) {
           data->record_measurement(lat, lon, 0.0, d, t);
         }
@@ -305,14 +312,15 @@ void loop()
         if (si.custom_chosen) {
           data->get_custom_location();
           lcd.zero_prompt_screen(data->custom_name);
-        } else {
-          lcd.print_zero(si.zero_count, lat, lon);
         }
+
+        lcd.print_zero(si.zero_count, lat, lon);
+        si.wait = 1;
         lcds.bit_clear = 0;
         //Serial.println(F("Exit zero"));
         break;
       }
-    case 4: // press for measurement
+    case 5: // press for measurement
       {
 
         lcd.clear();
@@ -326,12 +334,14 @@ void loop()
         } else {
           lcd.print_measurement(si.zero_count, si.measurement_count, lat, lon, h);
         }
+
         lcds.bit_clear = 0;
+        si.wait = 1;
         si.measurement_count++;
         //Serial.println(F("Exit meas"));
         break;
       }
-    case 5:
+    case 6:
       {
 
         if (!lcds.standard) {
@@ -351,28 +361,31 @@ void loop()
 
 
   // state determination
-  if ( (num_sats == TinyGPS::GPS_INVALID_SATELLITES) && (!si.gps_override)) // no GPS lock
-  {
+  if (si.wait) {
     state = 0;
   }
-  else if ((!si.zero_set) || (si.measurement_count > 50)) // zero needs to be set
+  else if ( (num_sats == TinyGPS::GPS_INVALID_SATELLITES) && (!si.gps_override)) // no GPS lock
   {
     state = 1;
   }
-  else if (si.zero_count > 99) // too many zeros
+  else if ((!si.zero_set) || (si.measurement_count > 50)) // zero needs to be set
   {
     state = 2;
   }
-  else if (no_pushed) // command to zero is input
+  else if (si.zero_count > 99) // too many zeros
   {
     state = 3;
   }
-  else if (yes_pushed) // command to measure is input
+  else if (no_pushed) // command to zero is input
   {
     state = 4;
   }
-  else { // ready to take measurement
+  else if (yes_pushed) // command to measure is input
+  {
     state = 5;
+  }
+  else { // ready to take measurement
+    state = 6;
   }
 }
 

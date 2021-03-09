@@ -200,7 +200,6 @@ void LCD::zero_max(uint8_t meas) {
   LCD::print(F("Data not stored."));
   LCD::setCursor(0, 3);
   LCD::print(F("Press to continue."));
-  wait_for_press(YES_PIN);
   return;
 }
 
@@ -226,7 +225,6 @@ void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float 
   LCD::print(long(x));
   LCD::print(F(","));
   LCD::print(long(y));
-  wait_for_press(YES_PIN);
   return;
 }
 
@@ -243,37 +241,10 @@ void LCD::print_zero(uint8_t zero, float x, float y, char * custom) {
     LCD::setCursor(0, 3);
     LCD::print(custom);
   }
-  wait_for_press(YES_PIN);
   return;
 }
 
 bool LCD::custom_select() {
   LCD::setCursor(0, 3);
   LCD::print(F("Use presets?"));
-  while (1) {
-    top_bar(0, 0xFF, 0);
-    if (!yes_pin) {
-      delay(PIN_DB);
-      return 1;
-    }
-    else if (!(bool)digitalRead(NO_PIN)) {
-      delay(PIN_DB);
-      return 0;
-    }
-  }
-
-}
-
-void LCD::wait_for_press(int pin) {
-  top_bar(0, 0xFF, 1);
-  while ((bool)digitalRead(YES_PIN)) {
-    top_bar(0, 0xFF, 0);
-  }
-  delay(PIN_DB);
-  while (!(bool)digitalRead(YES_PIN)) {
-    top_bar(0, 0xFF, 0);
-  }
-  delay(PIN_DB);
-
-
 }
