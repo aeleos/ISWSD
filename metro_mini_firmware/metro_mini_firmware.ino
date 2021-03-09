@@ -179,6 +179,7 @@ void setup()
 
 void loop()
 {
+<<<<<<< HEAD
   
   delay_and_read_gps(300);
   uint8_t num_sats = gps.satellites();
@@ -187,6 +188,16 @@ void loop()
   unsigned long d = TinyGPS::GPS_INVALID_DATE, t = TinyGPS::GPS_INVALID_TIME;
   
   
+=======
+
+  bool yes_pin = (bool)digitalRead(YES_PIN);
+  bool ze_pin = (bool)digitalRead(ZE_PIN);
+  bool me_pin = (bool)digitalRead(ME_PIN);
+
+  lcd.update_buttons(yes_pin, ze_pin, me_pin);
+
+  // execution
+>>>>>>> e8826607006853c2a7dfe564caefd96a08a5d860
   switch (state) {
     case 0:  // no GPS lock
       {
@@ -199,6 +210,10 @@ void loop()
           lcd.gpslock_screen();
           si.top_bar_update = 1;
         }
+<<<<<<< HEAD
+=======
+        si.gps_override = (!yes_pin || si.gps_override);
+>>>>>>> e8826607006853c2a7dfe564caefd96a08a5d860
         lcd.progress_loop(11, 0, 1);
         
         si.gps_override = (yes_pushed || si.gps_override);
@@ -226,9 +241,18 @@ void loop()
         else {
             lcd.zero_prompt_screen();
           }
+<<<<<<< HEAD
           
         if (no_pushed) {
           state = 3;
+=======
+          lcd_state = 0b00010000;
+          si.lcd_clear = 1;
+        }
+        if (!ze_pin) {
+          //Serial.println(F("HERE!"));
+          state = 4;
+>>>>>>> e8826607006853c2a7dfe564caefd96a08a5d860
         }
         
         if (state != 3) {
@@ -364,11 +388,18 @@ void loop()
   { 
     state = 3;
   }
+<<<<<<< HEAD
   else if (yes_pushed) // command to measure is input
   { 
     state = 4;
   }
   else { // ready to take measurement
+=======
+  else if (! ze_pin) { // if command to zero is input
+    state = 4;
+  }
+  else if (! me_pin) { // command to measure is input
+>>>>>>> e8826607006853c2a7dfe564caefd96a08a5d860
     state = 5;
   }
 }

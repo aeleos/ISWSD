@@ -26,22 +26,22 @@
 #define SCALE_VOLTL 1.27272727273
 
 
-uint8_t voltage_to_percent(){
+uint8_t voltage_to_percent() {
   uint16_t volt = (uint16_t)analogRead(BAT_PIN);
   //Serial.print(F("Battery voltage: "));
   //Serial.print(volt);
   uint8_t percent;
-  if (volt >= MAX_VOLT){
+  if (volt >= MAX_VOLT) {
     percent = 100;
   }
-  else if (volt < MIN_VOLT){
+  else if (volt < MIN_VOLT) {
     percent = 0;
   }
-  else if (volt >= MID_VOLT){
-    percent = (uint8_t)(((volt-MID_VOLT) * SCALE_VOLTH)+OFFSET_VOLTH);
+  else if (volt >= MID_VOLT) {
+    percent = (uint8_t)(((volt - MID_VOLT) * SCALE_VOLTH) + OFFSET_VOLTH);
   }
-  else{
-    percent = (uint8_t)(((volt-MIN_VOLT) * SCALE_VOLTL)+OFFSET_VOLTL);
+  else {
+    percent = (uint8_t)(((volt - MIN_VOLT) * SCALE_VOLTL) + OFFSET_VOLTL);
   }
   //Serial.print(F(" - "));
   //Serial.println(percent);
@@ -71,12 +71,22 @@ const PROGMEM uint8_t backslash[] = {
 
 };
 
-LCD::LCD(uint8_t addr, uint8_t cols, uint8_t rows) : LiquidCrystal_I2C(addr,cols,rows)
+LCD::LCD(uint8_t addr, uint8_t cols, uint8_t rows) : LiquidCrystal_I2C(addr, cols, rows)
 {
-  
+  yes_pin = false;
+  ze_pin = false;
+  me_pin = false;
+
 }
 
-void LCD::setup(){
+void LCD::update_buttons(bool yes, bool ze, bool me) {
+
+  yes_pin = yes;
+  ze_pin = ze;
+  me_pin = me;
+}
+
+void LCD::setup() {
   LCD::init();
   LCD::backlight();
   LCD::createChar(0, delta);
@@ -86,65 +96,73 @@ void LCD::setup(){
   return;
 }
 
-void LCD::top_bar(bool card,uint8_t sat, bool change){
+void LCD::top_bar(bool card, uint8_t sat, bool change) {
   uint8_t percent = voltage_to_percent();
-  if (percent < old_percent - 2 || percent > old_percent + 2 || sat != old_sat || change){ 
-    old_percent=percent;
+  if (percent < old_percent - 2 || percent > old_percent + 2 || sat != old_sat || change) {
+    old_percent = percent;
     old_sat = sat;
-  LCD::setCursor(14,0);  
-  if (sat > 9 && sat < 0xFF) {LCD::print(9);}
-  else if (sat < 9) {LCD::print(sat);}
-  LCD::setCursor(15,0);
-  if (card) LCD::print(F("C"));
-  LCD::setCursor(17,0); 
-  if (percent == 0 ) {LCD::print(F("LOW"));}
-  else {
-  LCD::print(percent);
-  if (percent < 100){
-  LCD::print(F("%"));
-  } }}
+    LCD::setCursor(14, 0);
+    if (sat > 9 && sat < 0xFF) {
+      LCD::print(9);
+    }
+    else if (sat < 9) {
+      LCD::print(sat);
+    }
+    LCD::setCursor(15, 0);
+    if (card) LCD::print(F("C"));
+    LCD::setCursor(17, 0);
+    if (percent == 0 ) {
+      LCD::print(F("LOW"));
+    }
+    else {
+      LCD::print(percent);
+      if (percent < 100) {
+        LCD::print(F("%"));
+      }
+    }
+  }
   return;
 }
 
-void LCD::progress_loop(uint8_t col, uint8_t row, int loops){
-  if (loopcount < loops-1){
+void LCD::progress_loop(uint8_t col, uint8_t row, int loops) {
+  if (loopcount < loops - 1) {
     loopcount++;
     return;
   }
-  if (loopcount >= loops){
-    loopcount=0;
+  if (loopcount >= loops) {
+    loopcount = 0;
   }
-  else{
-  LCD::setCursor(col,row);
-  if (loop == '/') {
-    LCD::print('-');
-    loop = '-';
-  }
-  else if (loop == '-') {
-    LCD::printByte(1);
-    loop = '\\';
-  }
-  else if (loop == '\\') {
-    LCD::print('|');
-    loop = '|';
-  }
-  else{
-    LCD::print('/');
-    loop = '/';
-  }
-  loopcount = 0;
-  return;
+  else {
+    LCD::setCursor(col, row);
+    if (loop == '/') {
+      LCD::print('-');
+      loop = '-';
+    }
+    else if (loop == '-') {
+      LCD::printByte(1);
+      loop = '\\';
+    }
+    else if (loop == '\\') {
+      LCD::print('|');
+      loop = '|';
+    }
+    else {
+      LCD::print('/');
+      loop = '/';
+    }
+    loopcount = 0;
+    return;
   }
 }
 
-void LCD::startup_screen(){
+void LCD::startup_screen() {
   LCD::clear();
   LCD::setCursor(0, 0);
   LCD::print(F("System startup"));
   return;
 }
 
-void LCD::gpslock_screen(){
+void LCD::gpslock_screen() {
   LCD::clear();
   LCD::setCursor(0, 0);
   LCD::print(F("GPS Search"));
@@ -154,58 +172,76 @@ void LCD::gpslock_screen(){
   return;
 }
 
-void LCD::zero_prompt_screen(char * custom){
+void LCD::zero_prompt_screen(char * custom) {
   LCD::clear();
   LCD::setCursor(0, 0);
   LCD::print(F("Hold to zero."));
   if (custom)
   {
-  LCD::setCursor(0, 1);
-  LCD::print(F("Zero point: "));
-  LCD::print(*custom);
+    LCD::setCursor(0, 1);
+    LCD::print(F("Zero point: "));
+    LCD::print(*custom);
   }
   return;
 }
 
-void LCD::standard_screen(uint8_t zero, uint8_t meas, char * custom){
+void LCD::standard_screen(uint8_t zero, uint8_t meas, char * custom) {
   LCD::clear();
   LCD::setCursor(0, 0);
   LCD::print(zero);
   LCD::print(F(":"));
   if (custom)
   {
-  LCD::print(*custom);
+    LCD::print(*custom);
   }
-  else{
-  LCD::print(meas);
+  else {
+    LCD::print(meas);
   }
   return;
 }
 
-void LCD::zero_max(uint8_t meas){
-  LCD::standard_screen(99,meas);
+void LCD::zero_max(uint8_t meas) {
+  LCD::standard_screen(99, meas);
   LCD::setCursor(0, 1);
   LCD::print(F("SD card full."));
   LCD::setCursor(0, 2);
   LCD::print(F("Data not stored."));
   LCD::setCursor(0, 3);
   LCD::print(F("Press to continue."));
+<<<<<<< HEAD
   wait_for_press(YES_PIN);
+=======
+  top_bar(0, 0xFF, 1);
+  while (yes_pin) {
+    top_bar(0, 0xFF, 0);
+  }
+  delay(PIN_DB);
   return;
 }
 
-void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z,char * custom){
-  LCD::standard_screen(zero,meas);
+
+void LCD::datapoint_max(uint8_t zero) {
+  LCD::standard_screen(zero, 49);
+  LCD::setCursor(0, 1);
+  LCD::print(F("Data point limit."));
+  LCD::setCursor(0, 2);
+  LCD::print(F("Hold to zero."));
+>>>>>>> e8826607006853c2a7dfe564caefd96a08a5d860
+  return;
+}
+
+void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z, char * custom) {
+  LCD::standard_screen(zero, meas);
   LCD::setCursor(0, 1);
   LCD::print(F("Point "));
   LCD::print(zero);
   LCD::print(F(":"));
-  if (custom){
+  if (custom) {
     LCD::setCursor(0, 3);
     LCD::print(custom);
   }
-  else{
-   LCD::print(meas); 
+  else {
+    LCD::print(meas);
   }
   LCD::setCursor(0, 2);
   LCD::printByte(0);
@@ -215,40 +251,60 @@ void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float 
   LCD::setCursor(0, 3);
   LCD::print(long(x));
   LCD::print(F(","));
+<<<<<<< HEAD
   LCD::print(long(y)); 
   wait_for_press(YES_PIN);
+=======
+  LCD::print(long(y));
+  top_bar(0, 0xFF, 1);
+  while (yes_pin) {
+    top_bar(0, 0xFF, 0);
+  }
+  delay(PIN_DB);
+>>>>>>> e8826607006853c2a7dfe564caefd96a08a5d860
   return;
 }
 
-void LCD::print_zero(uint8_t zero, float x, float y,char * custom){
-  LCD::standard_screen(zero,0);
+void LCD::print_zero(uint8_t zero, float x, float y, char * custom) {
+  LCD::standard_screen(zero, 0);
   LCD::setCursor(0, 1);
   LCD::print(F("Set zero point "));
   LCD::print(zero);
   LCD::setCursor(0, 2);
   LCD::print(long(x));
   LCD::print(F(","));
-  LCD::print(long(y));  
-  if (custom){
+  LCD::print(long(y));
+  if (custom) {
     LCD::setCursor(0, 3);
     LCD::print(custom);
   }
+<<<<<<< HEAD
   wait_for_press(YES_PIN);
+=======
+  top_bar(0, 0xFF, 1);
+  while (yes_pin) {
+    top_bar(0, 0xFF, 0);
+  }
+  delay(PIN_DB);
+>>>>>>> e8826607006853c2a7dfe564caefd96a08a5d860
   return;
 }
 
-bool LCD::custom_select(){
+bool LCD::custom_select() {
   LCD::setCursor(0, 3);
   LCD::print(F("Use presets?"));
-  while (1){
-    top_bar(0,0xFF,0);
-    if (!(bool)digitalRead(YES_PIN)){
+  while (1) {
+    top_bar(0, 0xFF, 0);
+    if (!yes_pin) {
       delay(PIN_DB);
-      return 1;}
-    else if (!(bool)digitalRead(NO_PIN)){
+      return 1;
+    }
+    else if (!(bool)digitalRead(NO_PIN)) {
       delay(PIN_DB);
-      return 0;}
+      return 0;
+    }
   }
+<<<<<<< HEAD
 }
 
 void LCD::wait_for_press(int pin){
@@ -257,5 +313,13 @@ void LCD::wait_for_press(int pin){
   delay(PIN_DB);
   while (!(bool)digitalRead(YES_PIN)){top_bar(0,0xFF,0);}
   delay(PIN_DB);
+=======
+
+}
+
+void LCD::card_overwrite() {
+  LCD::setCursor(15, 0);
+  LCD::print(F(" "));
+>>>>>>> e8826607006853c2a7dfe564caefd96a08a5d860
   return;
 }

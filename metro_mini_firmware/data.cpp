@@ -1,11 +1,11 @@
 #include "data.h"
 #include <SPI.h>
-#include <SD.h> 
+#include <SD.h>
 
-void Dataset::name_file(bool custom, uint8_t file_number){
+void Dataset::name_file(bool custom, uint8_t file_number) {
   int i = file_number % 10;
-  filename[2] = i+30;
-  filename[1] = int((file_number-i)/10)+30;
+  filename[2] = i + 30;
+  filename[1] = int((file_number - i) / 10) + 30;
   (custom) ? filename[0] = 'C' : filename[0] = 'F';
   return;
 }
@@ -17,37 +17,46 @@ void Dataset::name_file(bool custom, uint8_t file_number){
 //    return 1;
 //}
 
-void Dataset::reset(){
+void Dataset::reset() {
   read_to_character = 0;
   return;
 }
 
+<<<<<<< HEAD
 float Dataset::get_zero_pressure(void){
+=======
+void Dataset::set_zero(long x, long y, unsigned long d, unsigned long t) {
+  record_measurement(x, y, 0.0, d, t);
+  return;
+}
+
+float Dataset::get_zero_pressure(void) {
+>>>>>>> e8826607006853c2a7dfe564caefd96a08a5d860
   return zero_hPa;
 }
 
-void Dataset::record_measurement(long x, long y, float meas, unsigned long d, unsigned long t){
-    File myFile = SD.open(filename, FILE_WRITE);
-    myFile.print(d);
-    myFile.print(',');
-    myFile.print(t);
-    myFile.print(',');
-    myFile.print(x);
-    myFile.print(',');
-    myFile.print(y);
-    myFile.print(',');
-    myFile.println(meas);
+void Dataset::record_measurement(long x, long y, float meas, unsigned long d, unsigned long t) {
+  File myFile = SD.open(filename, FILE_WRITE);
+  myFile.print(d);
+  myFile.print(',');
+  myFile.print(t);
+  myFile.print(',');
+  myFile.print(x);
+  myFile.print(',');
+  myFile.print(y);
+  myFile.print(',');
+  myFile.println(meas);
   myFile.close();
   return;
 }
 
-bool Dataset::get_files(uint8_t * file_count){
+bool Dataset::get_files(uint8_t * file_count) {
   File dir;
   Serial.println(F("Opening Directory... "));
   dir = SD.open("/");
   bool custom = 0;
-  
-    while (true) {
+
+  while (true) {
     File entry =  dir.openNextFile();
     if (! entry) {
       // no more files
@@ -57,19 +66,19 @@ bool Dataset::get_files(uint8_t * file_count){
     *file_count++;
     Serial.print(F("File found: "));
     Serial.println(*file_count);
-    
+
     if (entry.name() == "cust.txt") {
       custom = 1;
       *file_count--;
-      }
+    }
     entry.close();
   }
 }
 
-uint8_t Dataset::get_custom_location(){
+uint8_t Dataset::get_custom_location() {
   char ch;
   uint8_t c = 0;
-  uint16_t place = 0; 
+  uint16_t place = 0;
   bool av = 0;
 
   File custom;
@@ -78,14 +87,14 @@ uint8_t Dataset::get_custom_location(){
     ch = custom.read();
   }
   ch = custom.read();
-  while (custom.available() && ch != '\n'){
-        av = 1;
-        custom_name[c] = ch;
-        c++;
-        place++;
-        ch = custom.read();
-    }
-  read_to_character = place+1;
+  while (custom.available() && ch != '\n') {
+    av = 1;
+    custom_name[c] = ch;
+    c++;
+    place++;
+    ch = custom.read();
+  }
+  read_to_character = place + 1;
   custom_name[c] = '\0';
   custom.close();
   return av;
