@@ -190,19 +190,7 @@ void LCD::zero_max(uint8_t meas){
   LCD::print(F("Data not stored."));
   LCD::setCursor(0, 3);
   LCD::print(F("Press to continue."));
-  top_bar(0,0xFF,1);
-  while ((bool)digitalRead(YES_PIN)){top_bar(0,0xFF,0);}
-  delay(PIN_DB);
-  return;
-}
-
-
-void LCD::datapoint_max(uint8_t zero){
-  LCD::standard_screen(zero,49);
-  LCD::setCursor(0, 1);
-  LCD::print(F("Data point limit."));
-  LCD::setCursor(0, 2);
-  LCD::print(F("Hold to zero."));
+  wait_for_press(YES_PIN);
   return;
 }
 
@@ -228,9 +216,7 @@ void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float 
   LCD::print(long(x));
   LCD::print(F(","));
   LCD::print(long(y)); 
-  top_bar(0,0xFF,1);
-  while ((bool)digitalRead(YES_PIN)){top_bar(0,0xFF,0);}
-  delay(PIN_DB);
+  wait_for_press(YES_PIN);
   return;
 }
 
@@ -247,9 +233,7 @@ void LCD::print_zero(uint8_t zero, float x, float y,char * custom){
     LCD::setCursor(0, 3);
     LCD::print(custom);
   }
-  top_bar(0,0xFF,1);
-  while ((bool)digitalRead(YES_PIN)){top_bar(0,0xFF,0);}
-  delay(PIN_DB);
+  wait_for_press(YES_PIN);
   return;
 }
 
@@ -265,11 +249,13 @@ bool LCD::custom_select(){
       delay(PIN_DB);
       return 0;}
   }
-  
 }
 
-void LCD::card_overwrite(){
-    LCD::setCursor(15,0);
-    LCD::print(F(" "));
-    return;
+void LCD::wait_for_press(int pin){
+  top_bar(0,0xFF,1);
+  while ((bool)digitalRead(YES_PIN)){top_bar(0,0xFF,0);}
+  delay(PIN_DB);
+  while (!(bool)digitalRead(YES_PIN)){top_bar(0,0xFF,0);}
+  delay(PIN_DB);
+  return;
 }
