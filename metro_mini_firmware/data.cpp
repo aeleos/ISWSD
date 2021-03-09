@@ -22,16 +22,13 @@ void Dataset::reset() {
   return;
 }
 
-<<<<<<< HEAD
-float Dataset::get_zero_pressure(void){
-=======
+
 void Dataset::set_zero(long x, long y, unsigned long d, unsigned long t) {
   record_measurement(x, y, 0.0, d, t);
   return;
 }
 
 float Dataset::get_zero_pressure(void) {
->>>>>>> e8826607006853c2a7dfe564caefd96a08a5d860
   return zero_hPa;
 }
 

@@ -16,20 +16,11 @@ class LCD : public LiquidCrystal_I2C
     void zero_prompt_screen(char * custom = NULL); // top row for when no 0s are set
     void standard_screen(uint8_t zero, uint8_t meas, char * custom = NULL); // top row for during measurement taking
     void zero_max(uint8_t meas);
-<<<<<<< HEAD
-    void print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z,char * custom = NULL); // print out the measurements taken
-    void print_zero(uint8_t zero, float x, float y,char * custom = NULL); // print out the location of the zero
-    bool custom_select();
-    void wait_for_press(int pin);
-=======
-    void datapoint_max(uint8_t zero);
     void print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z, char * custom = NULL); // print out the measurements taken
     void print_zero(uint8_t zero, float x, float y, char * custom = NULL); // print out the location of the zero
     bool custom_select();
-    void card_overwrite();
-    void update_buttons(bool yes, bool ze, bool me);
->>>>>>> e8826607006853c2a7dfe564caefd96a08a5d860
-  private:
+    void wait_for_press(int pin);
+
     uint8_t loopcount = 0;
     char loop = '\\';
     uint8_t old_percent;

@@ -73,18 +73,10 @@ const PROGMEM uint8_t backslash[] = {
 
 LCD::LCD(uint8_t addr, uint8_t cols, uint8_t rows) : LiquidCrystal_I2C(addr, cols, rows)
 {
-  yes_pin = false;
-  ze_pin = false;
-  me_pin = false;
+
 
 }
 
-void LCD::update_buttons(bool yes, bool ze, bool me) {
-
-  yes_pin = yes;
-  ze_pin = ze;
-  me_pin = me;
-}
 
 void LCD::setup() {
   LCD::init();
@@ -208,25 +200,7 @@ void LCD::zero_max(uint8_t meas) {
   LCD::print(F("Data not stored."));
   LCD::setCursor(0, 3);
   LCD::print(F("Press to continue."));
-<<<<<<< HEAD
   wait_for_press(YES_PIN);
-=======
-  top_bar(0, 0xFF, 1);
-  while (yes_pin) {
-    top_bar(0, 0xFF, 0);
-  }
-  delay(PIN_DB);
-  return;
-}
-
-
-void LCD::datapoint_max(uint8_t zero) {
-  LCD::standard_screen(zero, 49);
-  LCD::setCursor(0, 1);
-  LCD::print(F("Data point limit."));
-  LCD::setCursor(0, 2);
-  LCD::print(F("Hold to zero."));
->>>>>>> e8826607006853c2a7dfe564caefd96a08a5d860
   return;
 }
 
@@ -251,17 +225,8 @@ void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float 
   LCD::setCursor(0, 3);
   LCD::print(long(x));
   LCD::print(F(","));
-<<<<<<< HEAD
-  LCD::print(long(y)); 
-  wait_for_press(YES_PIN);
-=======
   LCD::print(long(y));
-  top_bar(0, 0xFF, 1);
-  while (yes_pin) {
-    top_bar(0, 0xFF, 0);
-  }
-  delay(PIN_DB);
->>>>>>> e8826607006853c2a7dfe564caefd96a08a5d860
+  wait_for_press(YES_PIN);
   return;
 }
 
@@ -278,15 +243,7 @@ void LCD::print_zero(uint8_t zero, float x, float y, char * custom) {
     LCD::setCursor(0, 3);
     LCD::print(custom);
   }
-<<<<<<< HEAD
   wait_for_press(YES_PIN);
-=======
-  top_bar(0, 0xFF, 1);
-  while (yes_pin) {
-    top_bar(0, 0xFF, 0);
-  }
-  delay(PIN_DB);
->>>>>>> e8826607006853c2a7dfe564caefd96a08a5d860
   return;
 }
 
@@ -304,22 +261,19 @@ bool LCD::custom_select() {
       return 0;
     }
   }
-<<<<<<< HEAD
-}
-
-void LCD::wait_for_press(int pin){
-  top_bar(0,0xFF,1);
-  while ((bool)digitalRead(YES_PIN)){top_bar(0,0xFF,0);}
-  delay(PIN_DB);
-  while (!(bool)digitalRead(YES_PIN)){top_bar(0,0xFF,0);}
-  delay(PIN_DB);
-=======
 
 }
 
-void LCD::card_overwrite() {
-  LCD::setCursor(15, 0);
-  LCD::print(F(" "));
->>>>>>> e8826607006853c2a7dfe564caefd96a08a5d860
-  return;
+void LCD::wait_for_press(int pin) {
+  top_bar(0, 0xFF, 1);
+  while ((bool)digitalRead(YES_PIN)) {
+    top_bar(0, 0xFF, 0);
+  }
+  delay(PIN_DB);
+  while (!(bool)digitalRead(YES_PIN)) {
+    top_bar(0, 0xFF, 0);
+  }
+  delay(PIN_DB);
+
+
 }
