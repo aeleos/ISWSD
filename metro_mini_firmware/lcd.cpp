@@ -88,11 +88,9 @@ void LCD::setup() {
   return;
 }
 
-void LCD::top_bar(bool card, uint8_t sat, bool change) {
+void LCD::top_bar(bool card, uint8_t sat) {
   uint8_t percent = voltage_to_percent();
-  if (percent < old_percent - 2 || percent > old_percent + 2 || sat != old_sat || change) {
-    old_percent = percent;
-    old_sat = sat;
+
     LCD::setCursor(14, 0);
     if (sat > 9 && sat < 0xFF) {
       LCD::print(9);
@@ -112,7 +110,7 @@ void LCD::top_bar(bool card, uint8_t sat, bool change) {
         LCD::print(F("%"));
       }
     }
-  }
+  
   return;
 }
 
@@ -166,11 +164,13 @@ void LCD::gpslock_screen() {
 
 void LCD::zero_prompt_screen(char * custom) {
   LCD::clear();
-  LCD::setCursor(0, 0);
-  LCD::print(F("Hold to zero."));
+  LCD::setCursor(0,0);
+  LCD::print(F("Set Origin"));
+  LCD::setCursor(0, 1);
+  LCD::print(F("Hold to set."));
   if (custom)
   {
-    LCD::setCursor(0, 1);
+    LCD::setCursor(0, 2);
     LCD::print(F("Zero point: "));
     LCD::print(*custom);
   }

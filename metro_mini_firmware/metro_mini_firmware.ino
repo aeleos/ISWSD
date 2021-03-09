@@ -32,14 +32,14 @@
 #include <TinyGPS.h>
 #include "lcd.h"
 #include <inttypes.h>
-#include "data.h"
+//#include "data.h"
 #include "pinout.h"
-#include <SD.h>
+//#include <SD.h>
 
 
 // Pressure Sensor Object
 Adafruit_DPS310 dps;
-Adafruit_Sensor *dps_pressure = dps.getPressureSensor();
+
 
 // Liquid Crystal Display Object
 LCD lcd(0x27, 20, 4); // set the LCD address to 0x27 for a 16 chars and 2 line display
@@ -50,6 +50,9 @@ SoftwareSerial gps_ss(7, 8);
 
 // GPS Object
 TinyGPS gps;
+
+float dps_zero = 0.0;
+float gps_lat_zero, gps_lon_zero, gps_alt_zero = 0.0;
 
 void setup()
 {
@@ -67,16 +70,6 @@ void setup()
   lcd.setup();                      // initialize the lcd
   lcd.startup_screen();
 
-  else {
-    data = new Dataset;
-    if (SD.begin(SS_PIN)) {
-      Serial.println(F("Card with file count "));
-    }
-    else {
-      delete data;
-      Serial.println(F("Card init failed."));
-    }
-  }
 
   gps_ss.begin(GPS_BAUD);
 
@@ -95,15 +88,114 @@ void setup()
 
 }
 
+enum global_state {
+  NO_GPS_LOCK,
+  NO_ZERO_SET,
+  READY_FOR_LOCATION,
+  CONFIRM_SAVE_LOCATION,
+};
+
+global_state current_state = NO_GPS_LOCK;
+global_state last_state = CONFIRM_SAVE_LOCATION;
+
+bool last_yes_button = true;
+bool last_no_button = true;
+bool last_card_inserted = false;
+
+uint8_t num_zero = 0;
+uint8_t num_measurements = 0;
+
 
 void loop()
 {
 
   // read all data inputs
 
+  // gps
+  float gps_lat, gps_lon, gps_alt;
+  uint8_t gps_sats = TinyGPS::GPS_INVALID_SATELLITES;
+  long unsigned int age;
+
+  gps_sats = gps.satellites();
+  gps_alt = gps.f_altitude();
+  gps.f_get_position(&gps_lat, &gps_lon, &age);
+
+  // DPS310 measurements
+  float dps_altitude = dps.readAltitude();
+
+  // digital inputs
+  bool yes_button = !digitalRead(YES_PIN);
+  bool no_button = !digitalRead(NO_PIN);
+  bool card_inserted = digitalRead(CD_PIN);
+
+  bool yes_button_changed = yes_button != last_yes_button;
+  bool no_button_changed = no_button != last_no_button;
+  bool card_inserted_changed = card_inserted != last_card_inserted;
+
+  last_yes_button = yes_button;
+  no_button_changed = last_no_button;
+  card_inserted_changed = last_card_inserted;
+
+  // is this the first time we are on this state
+  bool has_state_changed = false;
+
+  if (current_state != last_state) {
+    last_state = current_state;
+    has_state_changed = true;
+  }
+
 
 
   // do current state actions
+  switch (current_state) {
+    case NO_GPS_LOCK:
+      {
+        // update lcd
+        if (has_state_changed) {
+          lcd.gpslock_screen();
+        }
+
+        Serial.println("HERE NO_GPS_LOCK");
+
+        break;
+      }
+    case NO_ZERO_SET:
+      {
+
+        if (has_state_changed) {
+          lcd.zero_prompt_screen();
+          num_zero++;
+          num_measurements = 0;
+        }
+        Serial.println("HERE NO_ZERO_SET");
+
+        break;
+      }
+    case READY_FOR_LOCATION:
+      {
+
+        if (has_state_changed) {
+          num_measurements++;
+          lcd.standard_screen(num_zero, num_measurements);
+        }
+        Serial.println("HERE READY_FOR_LOCATION");
+
+        break;
+      }
+    case CONFIRM_SAVE_LOCATION:
+      {
+
+        if (has_state_changed) {
+          lcd.print_measurement(num_zero, num_measurements, gps_lat, gps_lon, dps_altitude);
+        }
+        Serial.println("HERE CONFIRM_SAVE_LOCATION");
+
+
+        break;
+      }
+
+
+  }
 
 
 
@@ -111,11 +203,73 @@ void loop()
   // update current state if needed
 
 
+  // do current state actions
+  bool should_transition = false;
+
+  bool was_yes_pressed = yes_button && yes_button_changed;
+  bool was_no_pressed = no_button && no_button_changed;
+
+
+  switch (current_state) {
+    case NO_GPS_LOCK:
+      {
+
+        should_transition = was_yes_pressed || gps_sats != TinyGPS::GPS_INVALID_SATELLITES;
+
+        if (should_transition)
+          current_state = NO_ZERO_SET;
+
+        break;
+      }
+    case NO_ZERO_SET:
+      {
+
+        should_transition = was_yes_pressed;
+
+        if (should_transition)
+          current_state = READY_FOR_LOCATION;
+
+        break;
+      }
+    case READY_FOR_LOCATION:
+      {
+        should_transition = was_yes_pressed || was_no_pressed;
+
+        if (should_transition) {
+          if (was_yes_pressed) {
+            current_state = CONFIRM_SAVE_LOCATION;
+          }
+
+          if (was_no_pressed)
+            current_state = NO_ZERO_SET;
+        }
+
+        break;
+      }
+    case CONFIRM_SAVE_LOCATION:
+      {
+
+        should_transition = was_yes_pressed;
+
+        if (should_transition)
+          current_state = READY_FOR_LOCATION;
+
+        break;
+      }
+
+
+  }
+
 
   // wait
-  
 
- 
+  if (has_state_changed) {
+    lcd.top_bar(card_inserted, gps_sats);
+  }
+
+  lcd.progress_loop(11, 0, 1);
+
+  delay_and_read_gps(1000);
 }
 
 

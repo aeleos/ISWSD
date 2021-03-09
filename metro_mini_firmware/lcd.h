@@ -9,7 +9,7 @@ class LCD : public LiquidCrystal_I2C
   public:
     LCD(uint8_t addr, uint8_t cols, uint8_t rows);
     void setup(); // setup the lcd conditions
-    void top_bar(bool card, uint8_t sat, bool change); // print the battery percentage in the top right corner
+    void top_bar(bool card, uint8_t sat); // print the battery percentage in the top right corner
     void progress_loop(uint8_t col, uint8_t row, int loops); // print a spinning wheel, updates after loops calls
     void startup_screen(); // top row for lcd startup message
     void gpslock_screen(); // top row for gps search screen
@@ -22,11 +22,7 @@ class LCD : public LiquidCrystal_I2C
 
     uint8_t loopcount = 0;
     char loop = '\\';
-    uint8_t old_percent;
-    uint8_t old_sat;
-    bool yes_pin;
-    bool ze_pin;
-    bool me_pin;
+
 };
 
 
