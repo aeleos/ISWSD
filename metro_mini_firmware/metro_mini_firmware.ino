@@ -163,6 +163,13 @@ void setup()
 
 void loop()
 {
+
+  bool yes_pin = (bool)digitalRead(YES_PIN);
+  bool ze_pin = (bool)digitalRead(ZE_PIN);
+  bool me_pin = (bool)digitalRead(ME_PIN);
+
+  lcd.update_buttons(yes_pin, ze_pin, me_pin);
+
   // execution
   switch (state) {
     case 0:  // no GPS lock
@@ -173,7 +180,7 @@ void loop()
           lcd_state = 0b01000000;
           lcd.gpslock_screen();
         }
-        si.gps_override = (!(bool)digitalRead(YES_PIN) || si.gps_override);
+        si.gps_override = (!yes_pin || si.gps_override);
         lcd.progress_loop(11, 0, 1);
         if (si.card) {
           data->name_file(si.custom, si.zero_count);
@@ -198,7 +205,7 @@ void loop()
           lcd_state = 0b00010000;
           si.lcd_clear = 1;
         }
-        if (!(bool)digitalRead(ZE_PIN)) {
+        if (!ze_pin) {
           //Serial.println(F("HERE!"));
           state = 4;
         }
@@ -359,10 +366,10 @@ void loop()
   else if (si.zero_count > 99) { // too many zeros
     state = 3;
   }
-  else if (! (bool)digitalRead(ZE_PIN)) { // if command to zero is input
+  else if (! ze_pin) { // if command to zero is input
     state = 4;
   }
-  else if (! (bool)digitalRead(ME_PIN)) { // command to measure is input
+  else if (! me_pin) { // command to measure is input
     state = 5;
   }
   else {

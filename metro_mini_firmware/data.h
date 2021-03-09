@@ -11,7 +11,7 @@ class Dataset
   public:
     //bool Data_init();
     void reset();
-    void name_file(bool custom,uint8_t file_number);
+    void name_file(bool custom, uint8_t file_number);
     void set_zero(long x, long y, unsigned long d, unsigned long t);
     float get_zero_pressure(void);
     void record_measurement(long x, long y, float meas, unsigned long d, unsigned long t);
@@ -25,7 +25,7 @@ class Dataset
     uint16_t read_to_character = 0;
     //Sd2Card card;
     //SdVolume volume;
-    
+
 };
 
 #endif
