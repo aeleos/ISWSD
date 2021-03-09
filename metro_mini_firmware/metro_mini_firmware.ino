@@ -188,6 +188,10 @@ void loop()
 
 
 
+  bool yes_pushed = digitalRead(YES_PIN);
+  bool no_pushed = digitalRead(NO_PIN);
+
+  
   // execution
   switch (state) {
     case 0:  // no GPS lock
@@ -343,10 +347,7 @@ void loop()
   lcd.top_bar(si.card_available, num_sats, si.top_bar_update);
   si.top_bar_update = 0;
 
-  bool yes_pushed = ((!digitalRead(YES_PIN)) && (!si.last_yes_pushed));
-  bool no_pushed = ((!digitalRead(NO_PIN)) && (!si.last_yes_pushed));
-  si.last_yes_pushed = yes_pushed;
-  si.last_no_pushed = no_pushed;
+
 
 
   // state determination
