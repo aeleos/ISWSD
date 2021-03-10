@@ -24,7 +24,7 @@ void Dataset::reset() {
 
 
 void Dataset::set_zero(long x, long y, unsigned long d, unsigned long t) {
-  record_measurement(x, y, 0.0, d, t);
+//  record_measurement(x, y, 0.0, d, t);
   return;
 }
 
@@ -32,8 +32,8 @@ float Dataset::get_zero_pressure(void) {
   return zero_hPa;
 }
 
-void Dataset::record_measurement(long x, long y, float meas, unsigned long d, unsigned long t) {
-  File myFile = SD.open(filename, FILE_WRITE);
+void Dataset::record_measurement(char* file, long x, long y, float meas, unsigned long d, unsigned long t) {
+  File myFile = SD.open(file, FILE_WRITE);
   myFile.print(d);
   myFile.print(',');
   myFile.print(t);

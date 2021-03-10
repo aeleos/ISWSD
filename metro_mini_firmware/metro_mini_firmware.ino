@@ -32,13 +32,15 @@
 #include <TinyGPS.h>
 #include "lcd.h"
 #include <inttypes.h>
-//#include "data.h"
+#include "data.h"
 #include "pinout.h"
-//#include <SD.h>
+#include <SD.h>
+#include <SimpleKalmanFilter.h>
 
 
 // Pressure Sensor Object
 Adafruit_DPS310 dps;
+Adafruit_Sensor *dps_pressure = dps.getPressureSensor();
 
 
 // Liquid Crystal Display Object
@@ -51,8 +53,18 @@ SoftwareSerial gps_ss(7, 8);
 // GPS Object
 TinyGPS gps;
 
-float dps_zero = 0.0;
-float gps_lat_zero, gps_lon_zero, gps_alt_zero = 0.0;
+
+struct MeasSet {
+  float gps_lat = 0;
+  float gps_lon = 0;
+  float gps_alt = 0;
+  float dps_alt = 0;
+};
+
+
+Dataset* data;
+
+
 
 void setup()
 {
@@ -83,14 +95,18 @@ void setup()
   dps.setMode(DPS310_CONT_PRESSURE);
   dps.configurePressure(DPS310_64HZ, DPS310_64SAMPLES);
 
+  // SD Card
+  data = new Dataset;
+  if (SD.begin(SS_PIN)) {
 
-  Serial.println(F("Init. Done"));
+  }
 
 }
 
 enum global_state {
   NO_GPS_LOCK,
-  NO_ZERO_SET,
+  READY_FOR_ZERO_SET,
+  CONFIRM_ZERO_SET,
   READY_FOR_LOCATION,
   CONFIRM_SAVE_LOCATION,
 };
@@ -105,23 +121,23 @@ bool last_card_inserted = false;
 uint8_t num_zero = 0;
 uint8_t num_measurements = 0;
 
+uint8_t num_loops = 0;
+
+
+SimpleKalmanFilter altitude_kf(0.001, 0.01, 0.01);
+
+struct MeasSet recent_meas;
+struct MeasSet saved_meas;
+struct MeasSet zero_meas;
+
+uint8_t gps_sats = TinyGPS::GPS_INVALID_SATELLITES;
+long unsigned int age;
+
 
 void loop()
 {
 
   // read all data inputs
-
-  // gps
-  float gps_lat, gps_lon, gps_alt;
-  uint8_t gps_sats = TinyGPS::GPS_INVALID_SATELLITES;
-  long unsigned int age;
-
-  gps_sats = gps.satellites();
-  gps_alt = gps.f_altitude();
-  gps.f_get_position(&gps_lat, &gps_lon, &age);
-
-  // DPS310 measurements
-  float dps_altitude = dps.readAltitude();
 
   // digital inputs
   bool yes_button = !digitalRead(YES_PIN);
@@ -144,6 +160,16 @@ void loop()
     has_state_changed = true;
   }
 
+  float current_alt;
+  float alt_estimate;
+
+  if (current_state > CONFIRM_ZERO_SET) {
+    current_alt = dps.readAltitude(zero_meas.dps_alt)*3.281;
+    alt_estimate = altitude_kf.updateEstimate(current_alt);
+    record_measurement(current_alt, alt_estimate);
+    recent_meas.dps_alt = alt_estimate;
+  }
+
 
 
   // do current state actions
@@ -155,19 +181,25 @@ void loop()
           lcd.gpslock_screen();
         }
 
-        Serial.println("HERE NO_GPS_LOCK");
-
         break;
       }
-    case NO_ZERO_SET:
+    case READY_FOR_ZERO_SET:
       {
 
         if (has_state_changed) {
           lcd.zero_prompt_screen();
-          num_zero++;
-          num_measurements = 0;
         }
-        Serial.println("HERE NO_ZERO_SET");
+
+        break;
+      }
+    case CONFIRM_ZERO_SET:
+      {
+
+        if (has_state_changed) {
+          lcd.print_measurement(num_zero, num_measurements, recent_meas.gps_lat, recent_meas.gps_lon, recent_meas.dps_alt);
+          saved_meas = recent_meas;
+
+        }
 
         break;
       }
@@ -175,10 +207,8 @@ void loop()
       {
 
         if (has_state_changed) {
-          num_measurements++;
           lcd.standard_screen(num_zero, num_measurements);
         }
-        Serial.println("HERE READY_FOR_LOCATION");
 
         break;
       }
@@ -186,9 +216,11 @@ void loop()
       {
 
         if (has_state_changed) {
-          lcd.print_measurement(num_zero, num_measurements, gps_lat, gps_lon, dps_altitude);
+          lcd.print_measurement(num_zero, num_measurements, recent_meas.gps_lat, recent_meas.gps_lon, recent_meas.dps_alt);
+          saved_meas = recent_meas;
+
         }
-        Serial.println("HERE CONFIRM_SAVE_LOCATION");
+
 
 
         break;
@@ -217,17 +249,44 @@ void loop()
         should_transition = was_yes_pressed || gps_sats != TinyGPS::GPS_INVALID_SATELLITES;
 
         if (should_transition)
-          current_state = NO_ZERO_SET;
+          current_state = READY_FOR_ZERO_SET;
 
         break;
       }
-    case NO_ZERO_SET:
+    case READY_FOR_ZERO_SET:
       {
 
         should_transition = was_yes_pressed;
 
         if (should_transition)
-          current_state = READY_FOR_LOCATION;
+          current_state = CONFIRM_ZERO_SET;
+
+        break;
+      }
+    case CONFIRM_ZERO_SET:
+      {
+
+        should_transition = was_yes_pressed || was_no_pressed;
+
+        if (should_transition) {
+
+          if (was_yes_pressed) {
+
+            zero_meas = saved_meas;
+
+            num_zero++;
+            num_measurements = 0;
+
+            data->name_file("test", num_zero);
+            data->record_measurement("test.csv", zero_meas.gps_lat, zero_meas.gps_lon, zero_meas.dps_alt, 0, 0);
+
+            current_state = READY_FOR_LOCATION;
+          }
+
+          if (was_no_pressed) {
+            current_state = READY_FOR_ZERO_SET;
+          }
+        }
 
         break;
       }
@@ -238,10 +297,13 @@ void loop()
         if (should_transition) {
           if (was_yes_pressed) {
             current_state = CONFIRM_SAVE_LOCATION;
+            num_measurements++;
+            data->record_measurement("test.csv", saved_meas.gps_lat, saved_meas.gps_lon, saved_meas.dps_alt, 0, 0);
           }
 
+
           if (was_no_pressed)
-            current_state = NO_ZERO_SET;
+            current_state = READY_FOR_ZERO_SET;
         }
 
         break;
@@ -263,21 +325,56 @@ void loop()
 
   // wait
 
-  if (has_state_changed) {
+  if (has_state_changed || (num_loops % 20 == 0)) {
     lcd.top_bar(card_inserted, gps_sats);
   }
 
-  lcd.progress_loop(11, 0, 1);
 
-  delay_and_read_gps(1000);
+  if (num_loops % 10 == 0)
+    lcd.progress_loop(11, 0, 1);
+
+  delay_and_read_gps(100);
+  num_loops++;
+}
+
+
+void record_measurement(float val1, float val2) {
+Serial.print("\t");
+
+Serial.print(val1);
+
+Serial.print(" ");
+
+Serial.println(val2);
 }
 
 
 static void delay_and_read_gps(unsigned long ms) {
   unsigned long start = millis();
+  sensors_event_t pressure_event;
   do
   {
-    while (gps_ss.available())
+    // Do state estimation updates
+
+    if (current_state == READY_FOR_ZERO_SET) {
+
+      if (dps.pressureAvailable()) {
+        dps_pressure->getEvent(&pressure_event);
+        recent_meas.dps_alt = pressure_event.pressure;
+      }
+    }
+
+
+
+    while (gps_ss.available()) {
+
       gps.encode(gps_ss.read());
+
+      gps_sats = gps.satellites();
+      recent_meas.gps_alt = gps.f_altitude();
+      gps.f_get_position(&recent_meas.gps_lat, &recent_meas.gps_lon, &age);
+
+
+    }
   } while (millis() - start < ms);
 }
