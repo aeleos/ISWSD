@@ -43,7 +43,7 @@ class MyTableWidget(QWidget):
         
         # Add tabs
         self.tabs.addTab(self.tab1,"Offload Data")
-        self.tabs.addTab(self.tab2,"Upload Custom")
+        self.tabs.addTab(self.tab2,"Upload Presets")
         
         ##########################
         # First tab
@@ -94,6 +94,7 @@ class MyTableWidget(QWidget):
         # PUSH BUTTON TO EXECUTE
 
         self.tab1.enter = QPushButton("Ok")
+        self.tab1.enter.clicked.connect(self.offloadData)
         self.tab1.layout.addWidget(self.tab1.enter)
 
         # STATUS TEXT
@@ -118,21 +119,21 @@ class MyTableWidget(QWidget):
         self.tab2.scrollLayout = QFormLayout(self.tab2.scroll)
         self.tab2.scrollLayout.setLabelAlignment(Qt.AlignLeft)
 
-        # CUSTOM OPTIONS
+        # PRESET OPTIONS
 
         self.tab2.radioButton1 = QRadioButton("Upload existing")
         self.tab2.radioButton1.setChecked(True)
-        self.tab2.customDropdown = QComboBox()
-        self.tab2.customDropdown.setSizeAdjustPolicy(QComboBox.AdjustToContents)
-        self.tab2.customDropdown.addItem("")
-        self.tab2.customDropdown.addItems(alt.custom_files)
+        self.tab2.presetDropdown = QComboBox()
+        self.tab2.presetDropdown.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+        self.tab2.presetDropdown.addItem("")
+        self.tab2.presetDropdown.addItems(alt.preset_files)
 
         self.tab2.radioButton2= QRadioButton("Generate new")
 
         self.tab2.radioButton1.toggled.connect(self.tab2Select)
         self.tab2.radioButton2.toggled.connect(self.tab2Select)
 
-        self.tab2.scrollLayout.addRow(self.tab2.radioButton1,self.tab2.customDropdown)
+        self.tab2.scrollLayout.addRow(self.tab2.radioButton1,self.tab2.presetDropdown)
         self.tab2.scrollLayout.addRow(self.tab2.radioButton2,QLabel(""))
 
         # SCROLL AREA
@@ -160,7 +161,7 @@ class MyTableWidget(QWidget):
         self.tab2.scroll.setWidget(self.tab2.groupBox)
 
         self.tab2.enter = QPushButton("Ok")
-        self.tab2.enter.clicked.connect(self.createCustom)
+        self.tab2.enter.clicked.connect(self.createPreset)
 
         self.tab2.status = QLabel("")
 
@@ -192,22 +193,22 @@ class MyTableWidget(QWidget):
         self.tab1.cardPath.setText(self.tab2.cardPath.text())
         self.tab1.cardPath.blockSignals(False)
 
-    def createCustom(self):
+    def createPreset(self):
         alt.set_card_path(self.tab2.cardPath.text())
         if (self.tab2.radioButton1.isChecked()): # upload existing file
-            alt.custom_extension = self.tab2.customDropdown.currentText() + ".txt"
-            success = alt.upload_existing_custom()
+            alt.preset_file_name = self.tab2.presetDropdown.currentText() + ".txt"
+            success = alt.upload_existing_preset()
         else:  # generate new file
-            self.tab2.customDropdown.addItem(self.tab2.char[0].text())
+            self.tab2.presetDropdown.addItem(self.tab2.char[0].text())
             for x in range(52):
                 if (self.tab2.char[x].text() != ""):
-                    alt.custom_input.append(self.tab2.char[x].text())
+                    alt.preset_input.append(self.tab2.char[x].text())
                     self.tab2.char[x].setText("")
-            success = alt.generate_custom()
+            success = alt.generate_preset()
         if (success == -1):
             self.tab2.status.setText("SD card path does not exist")
         elif (success == -2):
-            self.tab2.status.setText("Select an existing custom file")
+            self.tab2.status.setText("Select an existing preset file")
 
         else:
             self.tab2.status.setText("Success")
@@ -220,13 +221,30 @@ class MyTableWidget(QWidget):
 
     def tab2Select(self):
         if self.tab2.radioButton1.isChecked():
-            self.tab2.customDropdown.setEnabled(True)
+            self.tab2.presetDropdown.setEnabled(True)
             for x in range(52):
                 self.tab2.char[x].setReadOnly(True)
         else:
-            self.tab2.customDropdown.setEnabled(False)
+            self.tab2.presetDropdown.setEnabled(False)
             for x in range(52):
                 self.tab2.char[x].setReadOnly(False)
+
+    def offloadData(self):
+        alt.set_card_path(self.tab1.cardPath.text())
+        if (self.tab1.radioButton1.isChecked()): 
+            alt.data_path = alt.data_path_default
+        else: 
+            alt.data_path = alt.set_data_path(self.tab1.dataPath.text())
+
+        success = alt.offload_data()
+
+        if (success == -1):
+            self.tab1.status.setText("SD card path does not exist")
+        elif (success == -2):
+            self.tab1.status.setText("Save destination does not exist")
+        else:
+            self.tab1.status.setText("Success")
+
 
 
 
