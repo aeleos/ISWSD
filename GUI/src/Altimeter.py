@@ -29,7 +29,6 @@ class Altimeter:
 
         self.preset_files = []             # existing files in the /GUI/cust/ folder
         self.card_presets = []             # points read from PRESET_FILE on the SD card
-        self.data_files = []               # files in the data folder MAYBE DELETE
         self.preset_input = []             # user input from the form tab 2 while generating preset  
 
         self.get_paths()
