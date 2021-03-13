@@ -13,12 +13,16 @@ class LCD : public LiquidCrystal_I2C
     void progress_loop(uint8_t col, uint8_t row, int loops); // print a spinning wheel, updates after loops calls
     void startup_screen(); // top row for lcd startup message
     void gpslock_screen(); // top row for gps search screen
-    void zero_prompt_screen(char * custom = NULL); // top row for when no 0s are set
-    void standard_screen(uint8_t zero, uint8_t meas, char * custom = NULL); // top row for during measurement taking
+    void zero_prompt_screen(char * preset = NULL); // top row for when no 0s are set
+    void standard_screen(uint8_t zero, uint8_t meas, char * preset = NULL); // top row for during measurement taking
     void zero_max(uint8_t meas);
-    void print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z, char * custom = NULL); // print out the measurements taken
-    void print_zero(uint8_t zero, float x, float y, char * custom = NULL); // print out the location of the zero
-    bool custom_select();
+    void print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z, char * preset = NULL); // print out the measurements taken
+//    void print_zero(uint8_t zero, float x, float y, char * preset = NULL); // print out the location of the zero
+    void input_acknowledge();
+    void input_yes_no();
+    void input_measure_zero();
+    void input_zero();
+    bool preset_select();
 
     uint8_t loopcount = 0;
     char loop = '\\';

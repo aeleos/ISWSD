@@ -208,6 +208,7 @@ void loop()
 
         if (has_state_changed) {
           lcd.standard_screen(num_zero, num_measurements);
+          lcd.input_measure_zero();
         }
 
         break;
@@ -277,8 +278,7 @@ void loop()
             num_zero++;
             num_measurements = 0;
 
-            data->name_file("test", num_zero);
-            data->record_measurement("test.csv", zero_meas.gps_lat, zero_meas.gps_lon, zero_meas.dps_alt, 0, 0);
+            data->record_measurement('F', zero_meas.gps_lat, zero_meas.gps_lon, zero_meas.dps_alt, 0, 0);
 
             current_state = READY_FOR_LOCATION;
           }
@@ -298,7 +298,7 @@ void loop()
           if (was_yes_pressed) {
             current_state = CONFIRM_SAVE_LOCATION;
             num_measurements++;
-            data->record_measurement("test.csv", saved_meas.gps_lat, saved_meas.gps_lon, saved_meas.dps_alt, 0, 0);
+            data->record_measurement('M', saved_meas.gps_lat, saved_meas.gps_lon, saved_meas.dps_alt, 0, 0);
           }
 
 

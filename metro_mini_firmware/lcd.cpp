@@ -25,6 +25,9 @@
 #define SCALE_VOLTH 0.60975609756
 #define SCALE_VOLTL 1.27272727273
 
+#define LEFT_BUTTON_CURSOR 0
+#define RIGHT_BUTTON_CURSOR 12
+
 
 uint8_t voltage_to_percent() {
   uint16_t volt = (uint16_t)analogRead(BAT_PIN);
@@ -159,32 +162,34 @@ void LCD::gpslock_screen() {
   LCD::setCursor(0, 1);
   LCD::print(F("Satellites: "));
   LCD::print(F("No Lock"));
+  LCD::input_acknowledge();
   return;
 }
 
-void LCD::zero_prompt_screen(char * custom) {
+void LCD::zero_prompt_screen(char * preset) {
   LCD::clear();
   LCD::setCursor(0,0);
   LCD::print(F("Set Origin"));
   LCD::setCursor(0, 1);
   LCD::print(F("Hold to set."));
-  if (custom)
+  if (preset)
   {
     LCD::setCursor(0, 2);
     LCD::print(F("Zero point: "));
-    LCD::print(*custom);
+    LCD::print(*preset);
   }
+  LCD::input_zero();
   return;
 }
 
-void LCD::standard_screen(uint8_t zero, uint8_t meas, char * custom) {
+void LCD::standard_screen(uint8_t zero, uint8_t meas, char * preset) {
   LCD::clear();
   LCD::setCursor(0, 0);
   LCD::print(zero);
   LCD::print(F(":"));
-  if (custom)
+  if (preset)
   {
-    LCD::print(*custom);
+    LCD::print(*preset);
   }
   else {
     LCD::print(meas);
@@ -198,53 +203,68 @@ void LCD::zero_max(uint8_t meas) {
   LCD::print(F("SD card full."));
   LCD::setCursor(0, 2);
   LCD::print(F("Data not stored."));
-  LCD::setCursor(0, 3);
-  LCD::print(F("Press to continue."));
+  LCD::input_acknowledge();
   return;
 }
 
-void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z, char * custom) {
-  LCD::standard_screen(zero, meas);
+void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z, char * preset) {
+  LCD::standard_screen(zero, meas, preset);
   LCD::setCursor(0, 1);
-  LCD::print(F("Point "));
-  LCD::print(zero);
-  LCD::print(F(":"));
-  if (custom) {
-    LCD::setCursor(0, 3);
-    LCD::print(custom);
-  }
-  else {
-    LCD::print(meas);
-  }
-  LCD::setCursor(0, 2);
   LCD::printByte(0);
   LCD::print(F("h: "));
   LCD::print(z);
   LCD::print(F("ft"));
-  LCD::setCursor(0, 3);
-  LCD::print(long(x));
-  LCD::print(F(","));
-  LCD::print(long(y));
-  return;
-}
-
-void LCD::print_zero(uint8_t zero, float x, float y, char * custom) {
-  LCD::standard_screen(zero, 0);
-  LCD::setCursor(0, 1);
-  LCD::print(F("Set zero point "));
-  LCD::print(zero);
   LCD::setCursor(0, 2);
   LCD::print(long(x));
   LCD::print(F(","));
   LCD::print(long(y));
-  if (custom) {
-    LCD::setCursor(0, 3);
-    LCD::print(custom);
-  }
+  LCD::input_acknowledge();
   return;
 }
 
-bool LCD::custom_select() {
-  LCD::setCursor(0, 3);
+//void LCD::print_zero(uint8_t zero, float x, float y, char * preset) {
+//  LCD::standard_screen(zero, 0, preset);
+//  LCD::setCursor(0, 1);
+//  LCD::print(F("Origin"));
+//  LCD::setCursor(0, 2);
+//  LCD::print(long(x));
+//  LCD::print(F(","));
+//  LCD::print(long(y));
+//  LCD::input_acknowledge();
+//  return;
+//}
+
+void LCD::input_acknowledge(){
+  LCD::setCursor(LEFT_BUTTON_CURSOR,3);
+  LCD::print(F("Accept"));
+  return;
+}
+
+void LCD::input_zero(){
+  LCD::setCursor(RIGHT_BUTTON_CURSOR,3);
+  LCD::print(F("Zero"));
+  return;
+}
+
+void LCD::input_yes_no(){
+  LCD::setCursor(LEFT_BUTTON_CURSOR,3);
+  LCD::print(F("Yes"));
+  LCD::setCursor(RIGHT_BUTTON_CURSOR,3);
+  LCD::print(F("No"));
+  return;
+}
+
+void LCD::input_measure_zero(){
+  LCD::setCursor(LEFT_BUTTON_CURSOR,3);
+  LCD::print(F("Measure"));
+  LCD::setCursor(RIGHT_BUTTON_CURSOR,3);
+  LCD::print(F("Zero"));
+  return;
+}
+
+bool LCD::preset_select() {
+  LCD::setCursor(0, 2);
   LCD::print(F("Use presets?"));
+  LCD::input_yes_no();
+  return;
 }
