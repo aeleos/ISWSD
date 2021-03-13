@@ -16,7 +16,7 @@ FIELD_ZERO_TAG = 'F'
 MEASUREMENT_TAG = 'M'
 PRESET_FILE = "preset.txt"
 DATA_FILE = "data.csv"
-DATA_WRITE_HEADER = "Measurement,Date,Time,Latitude,Longitude,Height(m)\n"
+DATA_WRITE_HEADER = "Measurement,Date,Time,Latitude,Longitude,Height(ft)\n"
 
 class Altimeter:
 
