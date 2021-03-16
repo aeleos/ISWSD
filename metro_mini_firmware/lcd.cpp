@@ -25,8 +25,8 @@
 #define SCALE_VOLTH 0.60975609756
 #define SCALE_VOLTL 1.27272727273
 
-#define LEFT_BUTTON_CURSOR 0
-#define RIGHT_BUTTON_CURSOR 12
+#define LEFT_BUTTON_CURSOR 12
+#define RIGHT_BUTTON_CURSOR 0
 
 
 uint8_t voltage_to_percent() {
@@ -207,17 +207,19 @@ void LCD::zero_max(uint8_t meas) {
   return;
 }
 
-void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z, char * preset) {
+void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z, float w, char * preset) {
   LCD::standard_screen(zero, meas, preset);
   LCD::setCursor(0, 1);
   LCD::printByte(0);
   LCD::print(F("h: "));
   LCD::print(z);
   LCD::print(F("ft"));
+  LCD::print(F(" "));
+  LCD::print(w);
   LCD::setCursor(0, 2);
-  LCD::print(long(x));
+  LCD::print(x,5);
   LCD::print(F(","));
-  LCD::print(long(y));
+  LCD::print(y,5);
   LCD::input_acknowledge();
   return;
 }

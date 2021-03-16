@@ -38,9 +38,19 @@
 #include <SimpleKalmanFilter.h>
 
 
+//#include "Kalman.h"
+//using namespace BLA;
+//
+//#define Nstate 1 // vertical position
+//#define Nobs 2   // barometer position, gps position
+//
+//BLA::Matrix<Nobs> obs; // observation vector
+//KALMAN<Nstate, Nobs> K; // your Kalman filter
+
 // Pressure Sensor Object
 Adafruit_DPS310 dps;
 Adafruit_Sensor *dps_pressure = dps.getPressureSensor();
+Adafruit_Sensor *dps_temperature = dps.getTemperatureSensor();
 
 
 // Liquid Crystal Display Object
@@ -53,6 +63,10 @@ SoftwareSerial gps_ss(7, 8);
 // GPS Object
 TinyGPS gps;
 
+
+void lat_to_ft(float lat) {
+
+}
 
 struct MeasSet {
   float gps_lat = 0;
@@ -101,6 +115,20 @@ void setup()
 
   }
 
+  //  K.F = {1.0};
+  //
+  //  K.H = {
+  //    1.0,
+  //    1.0
+  //  };
+  //
+  //  K.R = {
+  //    1,
+  //    0.05
+  //  };
+  //
+  //  K.Q = {1};
+
 }
 
 enum global_state {
@@ -134,6 +162,15 @@ uint8_t gps_sats = TinyGPS::GPS_INVALID_SATELLITES;
 long unsigned int age;
 
 
+float getSeaHpaFromAlt(float P, float h, float T) {
+
+  return P * pow((1 - (0.0065 * h) / (T + 0.0065 * h + 273.15)), -5.257);
+}
+
+float last_temp = 0;
+
+float sea_level_hpa = 0;
+
 void loop()
 {
 
@@ -164,9 +201,14 @@ void loop()
   float alt_estimate;
 
   if (current_state > CONFIRM_ZERO_SET) {
-    current_alt = dps.readAltitude(zero_meas.dps_alt)*3.281;
+    current_alt = dps.readAltitude(sea_level_hpa);
     alt_estimate = altitude_kf.updateEstimate(current_alt);
-    record_measurement(current_alt, alt_estimate);
+    //    obs = {
+    //      current_alt,
+    //      recent_meas.gps_alt
+    //    };
+    //    K.update(obs);
+    record_measurement(alt_estimate, alt_estimate, alt_estimate);
     recent_meas.dps_alt = alt_estimate;
   }
 
@@ -196,7 +238,7 @@ void loop()
       {
 
         if (has_state_changed) {
-          lcd.print_measurement(num_zero, num_measurements, recent_meas.gps_lat, recent_meas.gps_lon, recent_meas.dps_alt);
+          lcd.print_measurement(num_zero, num_measurements, recent_meas.gps_lat, recent_meas.gps_lon, recent_meas.dps_alt, recent_meas.gps_alt);
           saved_meas = recent_meas;
 
         }
@@ -216,8 +258,9 @@ void loop()
     case CONFIRM_SAVE_LOCATION:
       {
 
-        if (has_state_changed) {
-          lcd.print_measurement(num_zero, num_measurements, recent_meas.gps_lat, recent_meas.gps_lon, recent_meas.dps_alt);
+        //        if (has_state_changed) {
+        if (num_loops % 10 == 0) {
+          lcd.print_measurement(num_zero, num_measurements, zero_meas.gps_lat - recent_meas.gps_lat, zero_meas.gps_lon - recent_meas.gps_lon, recent_meas.dps_alt, recent_meas.gps_alt);
           saved_meas = recent_meas;
 
         }
@@ -275,10 +318,12 @@ void loop()
 
             zero_meas = saved_meas;
 
+            sea_level_hpa = getSeaHpaFromAlt(zero_meas.dps_alt, zero_meas.gps_alt, last_temp);
+
             num_zero++;
             num_measurements = 0;
 
-            data->record_measurement('F', zero_meas.gps_lat, zero_meas.gps_lon, zero_meas.dps_alt, 0, 0);
+            data->record_measurement('F', zero_meas.gps_lat, zero_meas.gps_lon, zero_meas.dps_alt, zero_meas.gps_alt, 0);
 
             current_state = READY_FOR_LOCATION;
           }
@@ -298,7 +343,7 @@ void loop()
           if (was_yes_pressed) {
             current_state = CONFIRM_SAVE_LOCATION;
             num_measurements++;
-            data->record_measurement('M', saved_meas.gps_lat, saved_meas.gps_lon, saved_meas.dps_alt, 0, 0);
+            data->record_measurement('M', zero_meas.gps_lat - saved_meas.gps_lat, zero_meas.gps_lon - saved_meas.gps_lon, saved_meas.dps_alt, saved_meas.gps_alt, 0);
           }
 
 
@@ -338,25 +383,32 @@ void loop()
 }
 
 
-void record_measurement(float val1, float val2) {
-Serial.print("\t");
+void record_measurement(float val1, float val2, float val3) {
+  Serial.print("\t");
 
-Serial.print(val1);
+  Serial.print(val1);
 
-Serial.print(" ");
+  Serial.print(" ");
+  Serial.print(val2);
 
-Serial.println(val2);
+  Serial.print(" ");
+  Serial.println(val3);
 }
 
 
 static void delay_and_read_gps(unsigned long ms) {
   unsigned long start = millis();
-  sensors_event_t pressure_event;
+  sensors_event_t pressure_event, temperature_event;
   do
   {
     // Do state estimation updates
 
     if (current_state == READY_FOR_ZERO_SET) {
+
+      if (dps.temperatureAvailable()) {
+        dps_temperature->getEvent(&temperature_event);
+        last_temp = temperature_event.pressure;
+      }
 
       if (dps.pressureAvailable()) {
         dps_pressure->getEvent(&pressure_event);

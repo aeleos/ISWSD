@@ -12,7 +12,7 @@ class Dataset
     void reset();
     void set_zero(long x, long y, unsigned long d, unsigned long t);
     float get_zero_pressure(void);
-    void record_measurement(char c, long x, long y, float meas, unsigned long d, unsigned long t);
+    void record_measurement(char c, float x, float y, float meas, float d, unsigned long t);
     char filename[9] = "data.csv"; // name to which to write, based on which zero number this is
     // SD functions
     bool check_preset();

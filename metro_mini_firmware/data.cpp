@@ -26,19 +26,19 @@ float Dataset::get_zero_pressure(void) {
   return zero_hPa;
 }
 
-void Dataset::record_measurement(char c, long x, long y, float meas, unsigned long d, unsigned long t) {
+void Dataset::record_measurement(char c, float x, float y, float meas, float d, unsigned long t) {
   File myFile = SD.open(filename, FILE_WRITE);
   myFile.print(c);
   myFile.print(',');
-  myFile.print(d);
+  myFile.print(d,8);
   myFile.print(',');
   myFile.print(t);
   myFile.print(',');
-  myFile.print(x);
+  myFile.print(x,8);
   myFile.print(',');
-  myFile.print(y);
+  myFile.print(y,8);
   myFile.print(',');
-  myFile.println(meas);
+  myFile.println(meas,8);
   myFile.close();
   return;
 }

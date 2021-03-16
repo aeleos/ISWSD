@@ -16,7 +16,7 @@ class LCD : public LiquidCrystal_I2C
     void zero_prompt_screen(char * preset = NULL); // top row for when no 0s are set
     void standard_screen(uint8_t zero, uint8_t meas, char * preset = NULL); // top row for during measurement taking
     void zero_max(uint8_t meas);
-    void print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z, char * preset = NULL); // print out the measurements taken
+    void print_measurement(uint8_t zero, uint8_t meas, float x, float y, float z, float w, char * preset = NULL); // print out the measurements taken
 //    void print_zero(uint8_t zero, float x, float y, char * preset = NULL); // print out the location of the zero
     void input_acknowledge();
     void input_yes_no();
