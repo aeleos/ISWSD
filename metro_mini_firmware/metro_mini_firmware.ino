@@ -36,7 +36,7 @@
 #include "pinout.h"
 #include <SD.h>
 //#include <SimpleKalmanFilter.h>
-#include "FilterButterworthHP.h">
+#include "FilterButterworth.h">
 
 //#include "Kalman.h"
 //using namespace BLA;
@@ -158,7 +158,7 @@ struct MeasSet recent_meas;
 struct MeasSet saved_meas;
 struct MeasSet zero_meas;
 
-FilterBuHp2* filter = new FilterBuHp2();
+FilterBuBs2* filter = new FilterBuBs2();
 
 uint8_t gps_sats = TinyGPS::GPS_INVALID_SATELLITES;
 long unsigned int age;
