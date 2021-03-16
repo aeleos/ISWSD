@@ -5,34 +5,29 @@
 // Current Assumptions: 
 
 
-//Band stop butterworth filter order=2 alpha1=0.06 alpha2=6 
+//Band stop butterworth filter order=1 alpha1=0.001 alpha2=0.1 
 class  FilterBuBs2
 {
   public:
     FilterBuBs2()
     {
-      for(int i=0; i <= 4; i++)
-        v[i]=0.0;
+      v[0]=0.0;
+      v[1]=0.0;
+      v[2]=0.0;
     }
   private:
-    float v[5];
+    float v[3];
   public:
     float step(float x) //class II 
     {
       v[0] = v[1];
       v[1] = v[2];
-      v[2] = v[3];
-      v[3] = v[4];
-      v[4] = (INF * x)
-         + (-1.71241780505297924719 * v[0])
-         + (5.93308138268682316863 * v[1])
-         + (-7.75633281397461615825 * v[2])
-         + (4.53393654971823245603 * v[3]);
+      v[2] = (7.567445040180087457e-1 * x)
+         + (-0.51348900803603525489 * v[0])
+         + (1.51040231445543438049 * v[1]);
       return 
-        NaN * v[0]
-        NaN * v[4]
-        NaN * v[1]
-        NaN * v[3]
-        NaN * v[2];
+         1.000000 * v[0]
+        +v[2]
+        - 1.995921 * v[1];
     }
 };
