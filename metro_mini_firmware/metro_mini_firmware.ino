@@ -174,6 +174,7 @@ float last_temp = 0;
 float sea_level_hpa = 0;
 
 float last_alt = 0;
+float current_alt = 0;
 
 
 void loop()
@@ -202,14 +203,25 @@ void loop()
     has_state_changed = true;
   }
 
-  float current_alt;
   float alt_estimate;
+
   
   if (current_state > CONFIRM_ZERO_SET) {
+    
     last_alt = current_alt;
+
+    
     current_alt = dps.readAltitude(sea_level_hpa);
+
+  
 //    alt_estimate = altitude_kf.updateEstimate(current_alt);
-    alt_estimate = filter->step(current_alt-last_alt);
+    if (last_alt == 0) {
+          alt_estimate = filter->step(0);
+    } else {
+          alt_estimate = filter->step(current_alt-last_alt);
+
+    }
+
     //    obs = {
     //      current_alt,
     //      recent_meas.gps_alt
