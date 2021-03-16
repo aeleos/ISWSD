@@ -35,8 +35,8 @@
 #include "data.h"
 #include "pinout.h"
 #include <SD.h>
-#include <SimpleKalmanFilter.h>
-
+//#include <SimpleKalmanFilter.h>
+#include "FilterButterworthHP.h">
 
 //#include "Kalman.h"
 //using namespace BLA;
@@ -152,11 +152,13 @@ uint8_t num_measurements = 0;
 uint8_t num_loops = 0;
 
 
-SimpleKalmanFilter altitude_kf(0.001, 0.01, 0.01);
+//SimpleKalmanFilter altitude_kf(0.001, 0.01, 0.01);
 
 struct MeasSet recent_meas;
 struct MeasSet saved_meas;
 struct MeasSet zero_meas;
+
+FilterBuHp2* filter = new FilterBuHp2();
 
 uint8_t gps_sats = TinyGPS::GPS_INVALID_SATELLITES;
 long unsigned int age;
@@ -170,6 +172,9 @@ float getSeaHpaFromAlt(float P, float h, float T) {
 float last_temp = 0;
 
 float sea_level_hpa = 0;
+
+float last_alt = 0;
+
 
 void loop()
 {
@@ -199,10 +204,12 @@ void loop()
 
   float current_alt;
   float alt_estimate;
-
+  
   if (current_state > CONFIRM_ZERO_SET) {
+    last_alt = current_alt;
     current_alt = dps.readAltitude(sea_level_hpa);
-    alt_estimate = altitude_kf.updateEstimate(current_alt);
+//    alt_estimate = altitude_kf.updateEstimate(current_alt);
+    alt_estimate = filter->step(current_alt-last_alt);
     //    obs = {
     //      current_alt,
     //      recent_meas.gps_alt
