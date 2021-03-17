@@ -21,12 +21,14 @@
 */
 
 
+/*
+   ------------------------------------------------------------------
+   ------------------------------------------------------------------
+   INCLUDES
+   ------------------------------------------------------------------
+   ------------------------------------------------------------------
+*/
 
-
-
-//YWROBOT
-//Compatible with the Arduino IDE 1.0
-//Library version:1.1
 #include <Adafruit_DPS310.h>
 #include <SoftwareSerial.h>
 #include <TinyGPS.h>
@@ -35,54 +37,165 @@
 #include "data.h"
 #include "pinout.h"
 #include <SD.h>
-//#include <SimpleKalmanFilter.h>
+#include <SimpleKalmanFilter.h>
 #include "FilterButterworth.h">
 
-//#include "Kalman.h"
-//using namespace BLA;
-//
-//#define Nstate 1 // vertical position
-//#define Nobs 2   // barometer position, gps position
-//
-//BLA::Matrix<Nobs> obs; // observation vector
-//KALMAN<Nstate, Nobs> K; // your Kalman filter
+/*
+   ------------------------------------------------------------------
+   ------------------------------------------------------------------
+   OBJECTS AND VARIABLES
+   ------------------------------------------------------------------
+   ------------------------------------------------------------------
+*/
 
-// Pressure Sensor Object
+
+
+/*
+   ------------------------------------------------------------------
+   DPS 310 Pressure Sensor
+   ------------------------------------------------------------------
+*/
+
 Adafruit_DPS310 dps;
 Adafruit_Sensor *dps_pressure = dps.getPressureSensor();
 Adafruit_Sensor *dps_temperature = dps.getTemperatureSensor();
 
+sensor_event_t sensor_event;
 
-// Liquid Crystal Display Object
-LCD lcd(0x27, 20, 4); // set the LCD address to 0x27 for a 16 chars and 2 line display
-
-#define GPS_BAUD 9600
-// Software Serial Object for GPS, (rx, tx)
-SoftwareSerial gps_ss(7, 8);
-
-// GPS Object
-TinyGPS gps;
-
-
-void lat_to_ft(float lat) {
-
+// https://keisan.casio.com/exec/system/1224575267
+float getSeaLevelPressureFromAlt(float pressure, float height, float temperature) {
+  return (pressure) * pow((1 - (0.0065 * height) / (temperature + 0.0065 * height + 273.15)), -5.257);
 }
 
-struct MeasSet {
-  float gps_lat = 0;
-  float gps_lon = 0;
-  float gps_alt = 0;
-  float dps_alt = 0;
+// https://github.com/adafruit/Adafruit_DPS310/blob/master/Adafruit_DPS310.cpp
+// https://keisan.casio.com/exec/system/1224585971
+float getAltFromSeaLevelPressure(float seaLevelPressure, float currentPressure, float temperature) {
+  // return 44330 * (1.0 - pow((currentPressure / 100) / seaLevelPressure, 0.1903));
+  return ((pow(seaLevelPressure/currentPressure, -5.257) - 1) * (temperature + 273.15))/(0.0065);
+}
+
+
+struct dps_data_struct {
+  float temp = 0.0;
+  float pres = 0.0;
 };
 
+/*
+  ------------------------------------------------------------------
+  2004A 4x16 LCD
+  ------------------------------------------------------------------
+*/
+
+LCD lcd(0x27, 20, 4);
+
+
+/*
+  ------------------------------------------------------------------
+  NEO-6M GPS
+  ------------------------------------------------------------------
+*/
+
+// GPS Baud Rate
+#define GPS_BAUD 9600
+
+// Software Serial object for communciating with GPS
+SoftwareSerial gps_ss(GPS_SS_RX, GPS_SS_TX);
+
+// Tiny GPS Object
+TinyGPS gps;
+
+// variables for holding satellites and data age
+
+
+
+struct gps_data_struct {
+  uint8_t sats = TinyGPS::GPS_INVALID_SATELLITES;
+  long unsigned int age = 0;
+  float lat = 0;
+  float lon = 0;
+  float alt = 0;
+};
+
+//
+
+/*
+  ------------------------------------------------------------------
+  SD CARD
+  ------------------------------------------------------------------
+*/
 
 Dataset* data;
 
+/*
+  ------------------------------------------------------------------
+  STATE VARIABLES
+  ------------------------------------------------------------------
+*/
+
+
+// Enum that tracks which the device is in inside of the state machine
+enum state_indicator {
+  NO_GPS_LOCK,
+  READY_FOR_ZERO_SET,
+  CONFIRM_ZERO_SET,
+  READY_FOR_LOCATION,
+  CONFIRM_SAVE_LOCATION,
+};
+
+
+struct state {
+  // Track the current and previous state
+  state_indicator current = NO_GPS_LOCK;
+  state_indicator previous = CONFIRM_STATE_LOCATION;
+
+  // track how many times we have set the zero, and how many measurements have been taken
+  uint8_t num_zero = 0;
+  uint8_t num_measurements = 0;
+
+  // kalman filter for the
+  SimpleKalmanFilter altitude_kf = SimpleKalmanFilter(0.001, 0.01, 0.01);
+
+  // track the most recent, last and zero gps data
+  gps_data_struct gps_data_cur;
+  gps_data_struct gps_data_prev;
+  gps_data_struct gps_data_zero;
+
+  // track the most recent, last and zero dps data
+  dps_data_struct dps_data_cur;
+  dps_data_struct dps_data_prev;
+  dps_data_struct dps_data_zero;
+
+  // track the most recent estimate of the current altitude
+  float alt_esimate = 0;
+
+  // track the current pressure at sea level
+  float sea_level_pressure = 1038;
+
+  // previous state of each button
+  bool last_yes_button = true;
+  bool last_no_button = true;
+  bool last_card_inserted = false;
+};
+
+
+state device_state;
+
+
+uint8_t num_loops = 0;
+
+/*
+   ------------------------------------------------------------------
+   ------------------------------------------------------------------
+   SETUP
+   ------------------------------------------------------------------
+   ------------------------------------------------------------------
+*/
 
 
 void setup()
 {
 
+  // Setup pinmodes
   pinMode(YES_PIN, INPUT_PULLUP);
   pinMode(NO_PIN, INPUT_PULLUP);
   pinMode(SS_PIN, OUTPUT);
@@ -90,17 +203,18 @@ void setup()
 
   // Startup Serial
   Serial.begin(115200);
+
+  // wait for serial to startup
   while (!Serial) delay(10);
 
-
-  lcd.setup();                      // initialize the lcd
+  // Setup the lcd
+  lcd.setup();
   lcd.startup_screen();
 
-
+  // Initialize the GPS serial port
   gps_ss.begin(GPS_BAUD);
 
-  // Initialize Adafruit DPS310
-
+  // Initialize the dps310 sensor
   if (! dps.begin_I2C(DPS310_I2CADDR_DEFAULT, &Wire)) {
     ;
   }
@@ -115,122 +229,62 @@ void setup()
 
   }
 
-  //  K.F = {1.0};
-  //
-  //  K.H = {
-  //    1.0,
-  //    1.0
-  //  };
-  //
-  //  K.R = {
-  //    1,
-  //    0.05
-  //  };
-  //
-  //  K.Q = {1};
+  // done
 
 }
 
-enum global_state {
-  NO_GPS_LOCK,
-  READY_FOR_ZERO_SET,
-  CONFIRM_ZERO_SET,
-  READY_FOR_LOCATION,
-  CONFIRM_SAVE_LOCATION,
-};
 
-global_state current_state = NO_GPS_LOCK;
-global_state last_state = CONFIRM_SAVE_LOCATION;
-
-bool last_yes_button = true;
-bool last_no_button = true;
-bool last_card_inserted = false;
-
-uint8_t num_zero = 0;
-uint8_t num_measurements = 0;
-
-uint8_t num_loops = 0;
-
-
-//SimpleKalmanFilter altitude_kf(0.001, 0.01, 0.01);
-
-struct MeasSet recent_meas;
-struct MeasSet saved_meas;
-struct MeasSet zero_meas;
-
-FilterBuBs2* filter = new FilterBuBs2();
-
-uint8_t gps_sats = TinyGPS::GPS_INVALID_SATELLITES;
-long unsigned int age;
-
-
-float getSeaHpaFromAlt(float P, float h, float T) {
-
-  return P * pow((1 - (0.0065 * h) / (T + 0.0065 * h + 273.15)), -5.257);
-}
-
-float last_temp = 0;
-
-float sea_level_hpa = 0;
-
-float last_alt = 0;
-float current_alt = 0;
-
+/*
+   ------------------------------------------------------------------
+   ------------------------------------------------------------------
+   LOOP
+   ------------------------------------------------------------------
+   ------------------------------------------------------------------
+*/
 
 void loop()
 {
 
-  // read all data inputs
+  /*
+    ------------------------------------------------------------------
+    PRE-STATE ACTIONS
+    ------------------------------------------------------------------
+  */
 
   // digital inputs
   bool yes_button = !digitalRead(YES_PIN);
   bool no_button = !digitalRead(NO_PIN);
   bool card_inserted = digitalRead(CD_PIN);
 
-  bool yes_button_changed = yes_button != last_yes_button;
-  bool no_button_changed = no_button != last_no_button;
-  bool card_inserted_changed = card_inserted != last_card_inserted;
+  bool yes_button_changed = yes_button != device_state.last_yes_button;
+  bool no_button_changed = no_button != device_state.last_no_button;
+  bool card_inserted_changed = card_inserted != device_state.last_card_inserted;
 
-  last_yes_button = yes_button;
-  no_button_changed = last_no_button;
-  card_inserted_changed = last_card_inserted;
+  device_state.last_yes_button = yes_button;
+  device_state.last_no_button = no_button;
+  device_state.last_card_inserted = card_inserted;
 
   // is this the first time we are on this state
   bool has_state_changed = false;
 
-  if (current_state != last_state) {
-    last_state = current_state;
+  // if the state changed, update the variable and the previous
+  if (device_state.current != device_state.previous) {
+    device_state.previous = device_state.current;
     has_state_changed = true;
   }
 
-  float alt_estimate;
 
-  
-  if (current_state > CONFIRM_ZERO_SET) {
-    
-    last_alt = current_alt;
+  if (device_state.current > CONFIRM_ZERO_SET) {
 
-    
-    current_alt = dps.readAltitude(sea_level_hpa);
+    device_state.alt_estimate = altitude_kf.updateEstimate(getAltFromSeaLevelPressure(device_state.sea_level_pressure, device_state.dps_data_cur.pres, device_state.dps_data_cur.temp));
 
-  
-//    alt_estimate = altitude_kf.updateEstimate(current_alt);
-    if (last_alt == 0) {
-          alt_estimate = filter->step(0);
-    } else {
-          alt_estimate = filter->step(current_alt-last_alt);
-
-    }
-
-    //    obs = {
-    //      current_alt,
-    //      recent_meas.gps_alt
-    //    };
-    //    K.update(obs);
-    record_measurement(alt_estimate, alt_estimate, alt_estimate);
-    recent_meas.dps_alt = alt_estimate;
   }
 
+  /*
+    ------------------------------------------------------------------
+    CURRENT STATE ACTIONS
+    ------------------------------------------------------------------
+  */
 
 
   // do current state actions
@@ -257,7 +311,7 @@ void loop()
       {
 
         if (has_state_changed) {
-          lcd.print_measurement(num_zero, num_measurements, recent_meas.gps_lat, recent_meas.gps_lon, recent_meas.dps_alt, recent_meas.gps_alt);
+          lcd.print_measurement(device_state.num_zero, device_state.num_measurements, device_state.gps_data_cur.lat, device_state.gps_data_cur, recent_meas.dps_alt, recent_meas.gps_alt);
           saved_meas = recent_meas;
 
         }
@@ -295,8 +349,12 @@ void loop()
 
 
 
-  // update current state if needed
 
+  /*
+    ------------------------------------------------------------------
+    POST STATE TRANSITIONS
+    ------------------------------------------------------------------
+  */
 
   // do current state actions
   bool should_transition = false;
@@ -393,11 +451,10 @@ void loop()
     lcd.top_bar(card_inserted, gps_sats);
   }
 
-
   if (num_loops % 10 == 0)
     lcd.progress_loop(11, 0, 1);
 
-  delay_and_read_gps(100);
+  delay_and_read_sensors(100);
   num_loops++;
 }
 
@@ -415,37 +472,35 @@ void record_measurement(float val1, float val2, float val3) {
 }
 
 
-static void delay_and_read_gps(unsigned long ms) {
+static void delay_and_read_sensors(unsigned long ms) {
   unsigned long start = millis();
-  sensors_event_t pressure_event, temperature_event;
   do
   {
-    // Do state estimation updates
 
     if (current_state == READY_FOR_ZERO_SET) {
 
       if (dps.temperatureAvailable()) {
-        dps_temperature->getEvent(&temperature_event);
-        last_temp = temperature_event.pressure;
+        dps_temperature->getEvent(&sensor_event);
+        device_state.dps_data_prev.temp = device_state.dps_data_cur.temp;
+        device_state.dps_data_cur.temp = sensor_event.temperature;
       }
 
       if (dps.pressureAvailable()) {
-        dps_pressure->getEvent(&pressure_event);
-        recent_meas.dps_alt = pressure_event.pressure;
+        dps_pressure->getEvent(&sensor_event);
+        device_state.dps_data_prev.pres = device_state.dps_data_cur.pres;
+        device_state.dps_data_cur.pres = sensor_event.pressure;
       }
     }
 
 
-
     while (gps_ss.available()) {
-
       gps.encode(gps_ss.read());
-
-      gps_sats = gps.satellites();
-      recent_meas.gps_alt = gps.f_altitude();
-      gps.f_get_position(&recent_meas.gps_lat, &recent_meas.gps_lon, &age);
-
-
     }
+
+    device_state.gps_data_prev = device_state.gps_data_cur;
+    device_state.gps_data_cur.sats =  gps.satellites();
+    device_state.gps_data_cur.alt = gps.f_altitude();
+    gps.f_get_position(&device_state.gps_data_cur.lat, &device_state.gps_data_cur.lon, &device_state.gps_data_cur.age);
+
   } while (millis() - start < ms);
 }
