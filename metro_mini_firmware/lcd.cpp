@@ -213,7 +213,7 @@ void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float 
   LCD::printByte(0);
   LCD::print(F("h: "));
   LCD::print(z);
-  LCD::print(F("ft"));
+  LCD::print(F("m"));
   LCD::print(F(" "));
   LCD::print(w);
   LCD::setCursor(0, 2);
@@ -224,17 +224,24 @@ void LCD::print_measurement(uint8_t zero, uint8_t meas, float x, float y, float 
   return;
 }
 
-//void LCD::print_zero(uint8_t zero, float x, float y, char * preset) {
-//  LCD::standard_screen(zero, 0, preset);
-//  LCD::setCursor(0, 1);
-//  LCD::print(F("Origin"));
-//  LCD::setCursor(0, 2);
-//  LCD::print(long(x));
-//  LCD::print(F(","));
-//  LCD::print(long(y));
-//  LCD::input_acknowledge();
-//  return;
-//}
+
+void LCD::print_zero(uint8_t zero, uint8_t meas, float x, float y, float z, float w, char * preset) {
+  LCD::standard_screen(zero, meas, preset);
+  LCD::setCursor(0, 1);
+  LCD::printByte(0);
+  LCD::print(F("h: "));
+  LCD::print(z);
+  LCD::print(F("hPa"));
+  LCD::print(F(" "));
+  LCD::print(w);
+  LCD::print(F("m"));
+  LCD::setCursor(0, 2);
+  LCD::print(x,5);
+  LCD::print(F(","));
+  LCD::print(y,5);
+  LCD::input_acknowledge();
+  return;
+}
 
 void LCD::input_acknowledge(){
   LCD::setCursor(LEFT_BUTTON_CURSOR,3);
