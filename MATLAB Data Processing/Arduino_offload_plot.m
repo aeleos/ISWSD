@@ -3,6 +3,7 @@ clc;
 clear workspace;
 
 path = '';
+port = '/dev/tty.usbmodem1434201';
 
 % Based on Matlab Script Provided for Laboratory 10 ECE 216
 % Prof. Thomas Howard
@@ -14,7 +15,7 @@ if ~isempty(instrfind)
     delete(instrfind);
 end
 
-serial_device = serialport('/dev/tty.usbmodem1434201', 'BaudRate', 230400);
+serial_device = serialport(port, 'BaudRate', 115200);
 
 fopen(serial_device);
 
