@@ -3,7 +3,7 @@ clc;
 clear workspace;
 
 path = '';    % path to where the data files should be saved
-%port = '/dev/tty.usbmodem1434201'; % serial port
+port = '/dev/tty.usbmodem1434201'; % serial port
 REFRESH = 100; % data points before updating plot
 
 % Based on Matlab Script Provided for Laboratory 10 ECE 216
@@ -16,9 +16,9 @@ if ~isempty(instrfind)
     delete(instrfind);
 end
 
-%serial_device = serialport(port, 115200);
+serial_device = serialport(port, 115200);
 
-%fopen(serial_device);
+fopen(serial_device);
 
 START_TIME = now;
 START_TIME_STRING = datestr(datetime(START_TIME,'ConvertFrom','datenum'));
@@ -33,6 +33,7 @@ points = zeros(REFRESH,1);
 
 fig = figure;
 tiledlayout(2,1);
+set(fig,'KeyPressFcn',@endloop);
 
 p = nexttile;
 hold(p,'on');
@@ -45,16 +46,18 @@ hold(t,'on');
 plot(points,temperature);
 title('Temperature');
 ylabel('C');
-loop_count = 0;
 
+global loop;
+loop = 1;
+loop_count = 0;
 
 % LOOP
 
 for j=1:4
     
     for i=1:REFRESH
-        pressure( i ) = i;%fscanf(serial_device,'%f');
-        temperature( i ) = i;%fscanf(serial_device,'%f');
+        pressure( i ) = fscanf(serial_device,'%f');
+        temperature( i ) = fscanf(serial_device,'%f');
         points( i ) = i+loop_count;
         fprintf(data_file,'%d,%f,%f\n', points(i),pressure(i),temperature(i));
     end
@@ -67,12 +70,19 @@ end
 
 % CLOSING
 
-%fclose(serial_device);
+fclose(serial_device);
 fclose(data_file);
 
 END_TIME = now;
 END_TIME_STRING = datestr(datetime(END_TIME,'ConvertFrom','datenum'));
-END_FILE_NAME = [path, START_TIME_STRING, ' - ', END_TIME_STRING, '_S.csv'];
+END_FILE_NAME = [path, START_TIME_STRING, ' - ', END_TIME_STRING, '.csv'];
 
 
 movefile(START_FILE_NAME,END_FILE_NAME);
+
+function endloop(src,event)
+    if (event.Key == 10 || event.Key == 13)
+        global loop;
+        loop = 0;
+    end
+end
