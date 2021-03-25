@@ -28,7 +28,6 @@
 */
 
 #include "lcd.h"
-#include "pinout.h"
 #include <Adafruit_DPS310.h>
 
 /*
@@ -85,7 +84,6 @@ void setup()
 
   // Setup the lcd
   lcd.setup();
-  lcd.startup_screen();
 
   // Initialize the dps310 sensor
   if (!dps.begin_I2C(DPS310_I2CADDR_DEFAULT, &Wire))
@@ -113,6 +111,7 @@ void loop()
   lcd.progress_loop(0,0,1);
 
   if (logging){
+    
     if (dps.temperatureAvailable())
     {
       dps_temperature->getEvent(&sensor_event);
@@ -128,11 +127,14 @@ void loop()
   }
 
   if (Serial.available()){
+    
     char serial_read = Serial.read();
+    
     if (serial_read == '0')
       logging = 0;
     else
       logging = 1;
+      
     while (Serial.available())
       serial_read = Serial.read();
   }
