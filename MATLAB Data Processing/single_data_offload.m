@@ -1,13 +1,10 @@
-clear all;
 clc;
 clear workspace;
 
 path = '';    % path to where the data files should be saved
 port = '/dev/tty.usbmodem1434201'; % serial port
-REFRESH = 100; % data points before updating plot
+REFRESH = 5; % data points before updating plot
 
-% Based on Matlab Script Provided for Laboratory 10 ECE 216
-% Prof. Thomas Howard
 
 % SETUP
 
@@ -53,7 +50,9 @@ loop_count = 0;
 
 % LOOP
 
-for j=1:4
+fprintf(serial_device,"1");
+
+while(loop)
     
     for i=1:REFRESH
         pressure( i ) = fscanf(serial_device,'%f');
@@ -70,6 +69,8 @@ end
 
 % CLOSING
 
+fprintf(serial_device,"0");
+
 fclose(serial_device);
 fclose(data_file);
 
@@ -80,7 +81,7 @@ END_FILE_NAME = [path, START_TIME_STRING, ' - ', END_TIME_STRING, '.csv'];
 
 movefile(START_FILE_NAME,END_FILE_NAME);
 
-function endloop(src,event)
+function endloop(~,event)
     if (event.Key == 10 || event.Key == 13)
         global loop;
         loop = 0;
