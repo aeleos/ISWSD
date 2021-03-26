@@ -46,7 +46,9 @@
 
 Adafruit_DPS310 dps;
 Adafruit_Sensor *dps_pressure = dps.getPressureSensor();
-Adafruit_Sensor *dps_temp = dps.getTemperatureSensor();
+Adafruit_Sensor *dps_temperature = dps.getTemperatureSensor();
+
+sensors_event_t temp_event,press_event;
 
 
 
@@ -89,8 +91,9 @@ void setup()
     ;
   }
 
+  // Setup highest precision
+  dps.setMode(DPS310_CONT_PRESSURE);
   dps.configurePressure(DPS310_64HZ, DPS310_64SAMPLES);
-  dps.configureTemperature(DPS310_64HZ, DPS310_64SAMPLES);
 
   // done
 }
@@ -109,27 +112,25 @@ void loop()
 
   if (logging){
     
-    sensors_event_t temp_event, pressure_event;
-  
-  if (dps.temperatureAvailable()) {
-    dps_temp->getEvent(&temp_event);
-    Serial.println(temp_event.temperature);
-  }
-  else
-  {
-    Serial.println("NaN");
-  }
-
-  // Reading pressure also reads temp so don't check pressure
-  // before temp!
-  if (dps.pressureAvailable()) {
-    dps_pressure->getEvent(&pressure_event);
-    Serial.println(pressure_event.pressure);
-  }
+    if (dps.temperatureAvailable())
+    {
+      dps_temperature->getEvent(&temp_event);
+      Serial.println(temp_event.temperature);
+    }
     else
-  {
-    Serial.println("NaN");
-  }
+    {
+      Serial.println("NaN");
+    }
+
+    if (dps.pressureAvailable())
+    {
+      dps_pressure->getEvent(&press_event);
+      Serial.println(press_event.pressure);
+    }
+    else
+    {
+      Serial.println("NaN");
+    }
     
   }
 

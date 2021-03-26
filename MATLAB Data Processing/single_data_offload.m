@@ -1,9 +1,9 @@
 clc;
 clear workspace;
 
-port = '/dev/ttyUSB0'; % serial port
+port = '/dev/ttyUSB1'; % serial port
 path = '';    % path to where the data files should be saved
-REFRESH = 5; % data points before updating plot
+REFRESH = 2; % data points before updating plot
 
 
 % SETUP
@@ -52,17 +52,27 @@ pause(5);
 
 fprintf(serial_device,"1");
 
+line_start = zeros(3,1);
+
 while(loop)
+
+    temperature(1) = line_start(1);
+    pressure(1) = line_start(2);
+    points(1) = line_start(3);
     
-    for i=1:REFRESH
+    for i=2:REFRESH+1
         pause(.5);
         temperature( i )=fscanf(serial_device,'%f');
         pause(.5);
         pressure( i ) = fscanf(serial_device,'%f');
-        points( i ) = i+loop_count;
+        points( i ) = i+loop_count-1;
         fprintf(data_file,'%d,%f,%f\n', points(i),pressure(i),temperature(i));
     end
     loop_count = loop_count + REFRESH;
+    
+    line_start(1) = temperature(REFRESH+1);
+    line_start(2) = pressure(REFRESH+1);
+    line_start(3) = points(REFRESH+1);
     
     plot(p,points,pressure,'r');
     plot(t,points,temperature,'b');
