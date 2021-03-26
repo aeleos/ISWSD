@@ -129,7 +129,8 @@ void loop()
     }
     else
     {
-      Serial.println("NaN");
+      dps_pressure->getEvent(&press_event);
+      Serial.println(press_event.pressure);
     }
     
   }

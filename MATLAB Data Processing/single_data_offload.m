@@ -1,7 +1,7 @@
 clc;
 clear workspace;
 
-port = '/dev/ttyUSB1'; % serial port
+port = '/dev/ttyUSB0'; % serial port
 path = '';    % path to where the data files should be saved
 REFRESH = 2; % data points before updating plot
 
@@ -23,9 +23,9 @@ data_file = fopen(START_FILE_NAME,'wt');
 fopen(serial_device);
 fprintf(data_file,'Point,Pressure(hPa),Temp(C)\n');
 
-pressure = zeros(REFRESH,1);
-temperature = zeros(REFRESH,1);
-points = zeros(REFRESH,1);
+pressure = zeros(1,REFRESH);
+temperature = zeros(1,REFRESH);
+points = zeros(1,REFRESH);
 
 fig = figure;
 tiledlayout(2,1);
@@ -33,15 +33,17 @@ set(fig,'KeyPressFcn',@endloop);
 
 p = nexttile;
 hold(p,'on');
-plot(p,points,pressure);
+pp=plot(p,points,pressure,'r');
 title('Pressure');
 ylabel('hPa');
+xlim([1 inf]);
 
 t = nexttile;
 hold(t,'on');
-plot(points,temperature);
+tt=plot(t,points,temperature,'b');
 title('Temperature');
 ylabel('C');
+xlim([1 inf]);
 
 global loop;
 loop = 1;
@@ -52,30 +54,25 @@ pause(5);
 
 fprintf(serial_device,"1");
 
-line_start = zeros(3,1);
-
 while(loop)
-
-    temperature(1) = line_start(1);
-    pressure(1) = line_start(2);
-    points(1) = line_start(3);
     
-    for i=2:REFRESH+1
+    for i=1:REFRESH
         pause(.5);
         temperature( i )=fscanf(serial_device,'%f');
         pause(.5);
         pressure( i ) = fscanf(serial_device,'%f');
-        points( i ) = i+loop_count-1;
+        points( i ) = i+loop_count;
         fprintf(data_file,'%d,%f,%f\n', points(i),pressure(i),temperature(i));
     end
     loop_count = loop_count + REFRESH;
     
-    line_start(1) = temperature(REFRESH+1);
-    line_start(2) = pressure(REFRESH+1);
-    line_start(3) = points(REFRESH+1);
-    
-    plot(p,points,pressure,'r');
-    plot(t,points,temperature,'b');
+    xdata = get(pp,'XData');
+    pdata = get(pp,'YData');
+    tdata = get(tt,'YData');
+    set(pp,'XData',[xdata points]);
+    set(pp, 'YData',[pdata pressure]);
+    set(tt,'XData',[xdata points]);
+    set(tt, 'YData',[tdata temperature]);
 end
 
 
