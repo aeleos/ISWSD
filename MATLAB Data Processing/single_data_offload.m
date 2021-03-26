@@ -3,7 +3,7 @@ clear workspace;
 
 port = '/dev/ttyUSB0'; % serial port
 path = '';    % path to where the data files should be saved
-REFRESH = 2; % data points before updating plot
+REFRESH = 120; % data points before updating plot
 
 
 % SETUP

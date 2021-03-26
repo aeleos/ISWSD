@@ -27,11 +27,11 @@ START_FILE_NAME = [path, START_TIME_STRING, '.csv'];
 data_file = fopen(START_FILE_NAME,'wt');
 fprintf(data_file,'Point,Pressure(hPa),Temp(C),Pressure(hPa),Temp(C)\n');
 
-pressure1 = zeros(REFRESH+1,1);
-temperature1 = zeros(REFRESH+1,1);
-pressure2 = zeros(REFRESH+1,1);
-temperature2 = zeros(REFRESH+1,1);
-points = zeros(REFRESH+1,1);
+pressure1 = zeros(1,REFRESH);
+temperature1 = zeros(1,REFRESH);
+pressure2 = zeros(1,REFRESH);
+temperature2 = zeros(1,REFRESH);
+points = zeros(1,REFRESH);
 
 fig = figure;
 tiledlayout(4,1);
@@ -39,27 +39,31 @@ set(fig,'KeyPressFcn',@endloop);
 
 p1 = nexttile;
 hold(p1,'on');
-plot(p1,points,pressure1);
+pp1 = plot(p1,points,pressure1);
 title('Pressure');
 ylabel('hPa');
+xlim([1 inf]);
 
 t1 = nexttile;
 hold(t1,'on');
-plot(points,temperature1);
+tt1 = plot(t1,points,temperature1);
 title('Temperature');
 ylabel('C');
+xlim([1 inf]);
 
 p2 = nexttile;
 hold(p2,'on');
-plot(p2,points,pressure2);
+pp2 = plot(p2,points,pressure2);
 title('Pressure');
 ylabel('hPa');
+xlim([1 inf]);
 
 t2 = nexttile;
 hold(t2,'on');
-plot(t2,points,temperature2);
+tt2 = plot(t2,points,temperature2);
 title('Temperature');
 ylabel('C');
+xlim([1 inf]);
 
 global loop;
 loop = 1;
@@ -71,17 +75,9 @@ pause(5);
 fprintf(serial_device1,"1");
 fprintf(serial_device2,"1");
 
-line_start = [0 0 0 0 0];
-
 while(loop)
     
-    temperature1(1) = line_start(1);
-    pressure1(1) = line_start(2);
-    temperature2(1) = line_start(3);
-    pressure2(1) = line_start(4);
-    points(1) = line_start(5);
-    
-    for i=2:REFRESH+1
+    for i=1:REFRESH
         pause(.25);
         temperature1( i ) = fscanf(serial_device1,'%f');
         pause(.25);
@@ -90,23 +86,25 @@ while(loop)
         temperature2( i ) = fscanf(serial_device2,'%f');
         pause(.25);
         pressure2( i ) = fscanf(serial_device2,'%f');     
-        points( i ) = i+loop_count-1;
+        points( i ) = i+loop_count;
         fprintf(data_file,'%d,%f,%f,%f,%f\n', points(i),pressure1(i),temperature1(i),pressure2(i),temperature2(i));
     end
     loop_count = loop_count + REFRESH;
     
-    line_start(1) = temperature1(REFRESH+1);
-    line_start(2) = pressure1(REFRESH+1);
-    line_start(3) = temperature2(REFRESH+1);
-    line_start(4) = pressure2(REFRESH+1);
-    line_start(5) = points(REFRESH+1);
+    xdata = get(pp1,'XData');
+    p1data = get(pp1,'YData');
+    t1data = get(tt1,'YData');
+    p2data = get(pp2,'YData');
+    t2data = get(tt2,'YData');
+    set(pp1,'XData',[xdata points]);
+    set(pp1, 'YData',[p1data pressure1]);
+    set(tt1,'XData',[xdata points]);
+    set(tt1, 'YData',[t1data temperature1]);
+    set(pp2,'XData',[xdata points]);
+    set(pp2, 'YData',[p2data pressure2]);
+    set(tt2,'XData',[xdata points]);
+    set(tt2, 'YData',[t2data temperature2]);
     
-    plot(p1,points,pressure1,'r');
-    plot(t1,points,temperature1,'b');
-    plot(p2,points,pressure2,'r');
-    plot(t2,points,temperature2,'b');
-    
-    pause(1);
 end
 
 
