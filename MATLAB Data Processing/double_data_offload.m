@@ -22,7 +22,7 @@ fopen(serial_device2);
 
 START_TIME = now;
 START_TIME_STRING = datestr(datetime(START_TIME,'ConvertFrom','datenum'));
-START_FILE_NAME = [path, START_TIME_STRING, '.csv'];
+START_FILE_NAME = strrep(strrep([path, START_TIME_STRING, '.csv'],' ','_'),':','-');
 
 data_file = fopen(START_FILE_NAME,'wt');
 fprintf(data_file,'Point,Pressure(hPa),Temp(C),Pressure(hPa),Temp(C)\n');
@@ -119,8 +119,7 @@ fclose(data_file);
 
 END_TIME = now;
 END_TIME_STRING = datestr(datetime(END_TIME,'ConvertFrom','datenum'));
-END_FILE_NAME = [path, START_TIME_STRING, ' - ', END_TIME_STRING, '_D.csv'];
-
+END_FILE_NAME = strrep(strrep([path, START_TIME_STRING, '_', END_TIME_STRING, '_D.csv'],' ','_'),':','-');
 
 movefile(START_FILE_NAME,END_FILE_NAME);
 

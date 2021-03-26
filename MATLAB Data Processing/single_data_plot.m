@@ -16,12 +16,12 @@ plot(p,points,pressure,'r');
 title('Pressure');
 ylabel('hPa');
 
-t = nexttile;
-plot(points,temperature,'b');
-title('Temperature');
-ylabel('C');
-
 h = nexttile;
 plot(points,height,'g');
 title('Altitude');
 ylabel('m');
+
+t = nexttile;
+plot(points,temperature,'b');
+title('Temperature');
+ylabel('C');

@@ -3,7 +3,7 @@ clear workspace;
 
 port = '/dev/ttyUSB0'; % serial port
 path = '';    % path to where the data files should be saved
-REFRESH = 120; % data points before updating plot
+REFRESH = 5; % data points before updating plot
 
 
 % SETUP
@@ -17,7 +17,7 @@ serial_device = serial(port, 'BAUD', 115200);
 
 START_TIME = now;
 START_TIME_STRING = datestr(datetime(START_TIME,'ConvertFrom','datenum'));
-START_FILE_NAME = [path, START_TIME_STRING, '.csv'];
+START_FILE_NAME = strrep(strrep([path, START_TIME_STRING, '.csv'],' ','_'),':','-');
 
 data_file = fopen(START_FILE_NAME,'wt');
 fopen(serial_device);
@@ -86,8 +86,8 @@ fclose(data_file);
 
 END_TIME = now;
 END_TIME_STRING = datestr(datetime(END_TIME,'ConvertFrom','datenum'));
-END_FILE_NAME = [path, START_TIME_STRING, ' - ', END_TIME_STRING, '_S.csv'];
-
+END_FILE_NAME = strrep(strrep([path, START_TIME_STRING, '_', END_TIME_STRING, '_S.csv'],' ','_'),':','-');
+clear workspace;
 
 movefile(START_FILE_NAME,END_FILE_NAME);
 
