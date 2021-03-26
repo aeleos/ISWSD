@@ -1,12 +1,11 @@
-clear all;
 clc;
 clear workspace;
 
 data = readmatrix(uigetfile('*_S.csv'),'RANGE',[2 1]);
 
-points = data(2:end,1);
-pressure = data(2:end,2);
-temperature = data(2:end,3);
+points = data(:,1);
+pressure = data(:,2);
+temperature = data(:,3);
 
 fig = figure;
 tiledlayout(2,1);
