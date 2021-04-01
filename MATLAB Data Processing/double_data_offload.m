@@ -1,9 +1,10 @@
 clc;
 clear workspace;
 
-port1 = '/dev/ttyUSB0'; % serial port
-port2 = '/dev/ttyUSB1'; % second serial port
-path = '';    % path to where the data files should be saved
+PORT1 = '/dev/ttyUSB0'; % serial port
+PORT2 = '/dev/ttyUSB1'; % second serial port
+PATH = '';    % path to where the data files should be saved
+STEP = 30;    % seconds between measurements
 REFRESH = 5; % data points before updating plot
 
 
@@ -14,17 +15,17 @@ if ~isempty(instrfind)
     delete(instrfind);
 end
 
-serial_device1 = serial(port1, 'BAUD', 115200);
-serial_device2 = serial(port2, 'BAUD', 115200);
+serial_device1 = serial(PORT1, 'BAUD', 115200);
+serial_device2 = serial(PORT2, 'BAUD', 115200);
 
 fopen(serial_device1);
 fopen(serial_device2);
 
-START_TIME = now;
-START_TIME_STRING = datestr(datetime(START_TIME,'ConvertFrom','datenum'));
-START_FILE_NAME = strrep(strrep([path, START_TIME_STRING, '.csv'],' ','_'),':','-');
+start_time = now;
+start_time_string = datestr(datetime(start_time,'ConvertFrom','datenum'));
+start_file_name = strrep(strrep([PATH, start_time_string, '.csv'],' ','_'),':','-');
 
-data_file = fopen(START_FILE_NAME,'wt');
+data_file = fopen(start_file_name,'wt');
 fprintf(data_file,'Point,Pressure(hPa),Temp(C),Pressure(hPa),Temp(C)\n');
 
 pressure1 = zeros(1,REFRESH);
@@ -72,21 +73,21 @@ pause(5);
 
 % LOOP
 
-fprintf(serial_device1,"1");
-fprintf(serial_device2,"1");
+fprintf(serial_device1,'%d',STEP);
+fprintf(serial_device2,'%d',STEP);
 
 while(loop)
     
     for i=1:REFRESH
-        pause(.25);
+        pause(STEP/4);
         temperature1( i ) = fscanf(serial_device1,'%f');
-        pause(.25);
+        pause(STEP/4);
         pressure1( i ) = fscanf(serial_device1,'%f');
-        pause(.25);
+        pause(STEP/4);
         temperature2( i ) = fscanf(serial_device2,'%f');
-        pause(.25);
+        pause(STEP/4);
         pressure2( i ) = fscanf(serial_device2,'%f');     
-        points( i ) = i+loop_count;
+        points( i ) = STEP*(i+loop_count-1);
         fprintf(data_file,'%d,%f,%f,%f,%f\n', points(i),pressure1(i),temperature1(i),pressure2(i),temperature2(i));
     end
     loop_count = loop_count + REFRESH;
@@ -110,22 +111,26 @@ end
 
 % CLOSING
 
-fprintf(serial_device1,"0");
-fprintf(serial_device2,"0");
+fprintf(serial_device1,0);
+fprintf(serial_device2,0);
 
 fclose(serial_device1);
 fclose(serial_device2);
 fclose(data_file);
 
-END_TIME = now;
-END_TIME_STRING = datestr(datetime(END_TIME,'ConvertFrom','datenum'));
-END_FILE_NAME = strrep(strrep([path, START_TIME_STRING, '_', END_TIME_STRING, '_D.csv'],' ','_'),':','-');
+end_time = now;
+end_time_string = datestr(datetime(end_time,'ConvertFrom','datenum'));
+end_file_name = strrep(strrep([PATH, start_time_string, '_', end_time_string, '_D.csv'],' ','_'),':','-');
 
-movefile(START_FILE_NAME,END_FILE_NAME);
+movefile(start_file_name,end_file_name);
+disp('Session closed.');
 
 function endloop(~,event)
+    if (length(event.Key) == 6)
     if (event.Key == 'escape')
         global loop;
         loop = 0;
+        disp('Ending logging session...');
+    end
     end
 end

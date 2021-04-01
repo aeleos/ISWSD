@@ -1,9 +1,10 @@
 clc;
 clear workspace;
+STEP = 1; % seconds between data measurements
+PORT = '/dev/ttyUSB0'; % serial port
+PATH = '';    % path to where the data files should be saved
 
-port = '/dev/ttyUSB0'; % serial port
-path = '';    % path to where the data files should be saved
-REFRESH = 5; % data points before updating plot
+REFRESH = 1; % data points before updating plot
 
 
 % SETUP
@@ -13,13 +14,13 @@ if ~isempty(instrfind)
     delete(instrfind);
 end
 
-serial_device = serial(port, 'BAUD', 115200);
+serial_device = serial(PORT, 'BAUD', 115200);
 
-START_TIME = now;
-START_TIME_STRING = datestr(datetime(START_TIME,'ConvertFrom','datenum'));
-START_FILE_NAME = strrep(strrep([path, START_TIME_STRING, '.csv'],' ','_'),':','-');
+start_time = now;
+start_time_string = datestr(datetime(start_time,'ConvertFrom','datenum'));
+start_file_name = strrep(strrep([PATH, start_time_string, '.csv'],' ','_'),':','-');
 
-data_file = fopen(START_FILE_NAME,'wt');
+data_file = fopen(start_file_name,'wt');
 fopen(serial_device);
 fprintf(data_file,'Point,Pressure(hPa),Temp(C)\n');
 
@@ -52,16 +53,16 @@ pause(5);
 
 % LOOP
 
-fprintf(serial_device,"1");
+fprintf(serial_device,"%d", STEP);
 
 while(loop)
     
     for i=1:REFRESH
-        pause(.5);
+        pause(STEP/2);
         temperature( i )=fscanf(serial_device,'%f');
-        pause(.5);
+        pause(STEP/2);
         pressure( i ) = fscanf(serial_device,'%f');
-        points( i ) = i+loop_count;
+        points( i ) = STEP*(i+loop_count-1);
         fprintf(data_file,'%d,%f,%f\n', points(i),pressure(i),temperature(i));
     end
     loop_count = loop_count + REFRESH;
@@ -84,16 +85,20 @@ fclose(serial_device);
 delete(serial_device);
 fclose(data_file);
 
-END_TIME = now;
-END_TIME_STRING = datestr(datetime(END_TIME,'ConvertFrom','datenum'));
-END_FILE_NAME = strrep(strrep([path, START_TIME_STRING, '_', END_TIME_STRING, '_S.csv'],' ','_'),':','-');
+end_time = now;
+end_time_string = datestr(datetime(end_time,'ConvertFrom','datenum'));
+end_file_name = strrep(strrep([PATH, start_time_string, '_', end_time_string, '_S.csv'],' ','_'),':','-');
 clear workspace;
+disp('Session closed.')
 
-movefile(START_FILE_NAME,END_FILE_NAME);
+movefile(start_file_name,end_file_name);
 
 function endloop(~,event)
+    if (length(event.Key) == 6)
     if (event.Key == 'escape')
         global loop;
         loop = 0;
+        disp('Ending logging session...');
+    end
     end
 end

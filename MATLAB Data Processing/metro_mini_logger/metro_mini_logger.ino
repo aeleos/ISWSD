@@ -63,6 +63,8 @@ LCD lcd(0x27, 20, 4);
 
 
 bool logging = 0;
+unsigned int loop_count = 0;
+unsigned int log_on_count;
 
 /*
    ------------------------------------------------------------------
@@ -111,46 +113,56 @@ void loop()
   lcd.progress_loop(0,0,1);
 
   if (logging){
-    
-    if (dps.temperatureAvailable())
-    {
-      dps_temperature->getEvent(&temp_event);
-      Serial.println(temp_event.temperature);
-    }
-    else
-    {
-      Serial.println("NaN");
-    }
 
-    if (dps.pressureAvailable())
-    {
-      dps_pressure->getEvent(&press_event);
-      Serial.println(press_event.pressure);
-    }
-    else
-    {
-      dps_pressure->getEvent(&press_event);
-      Serial.println(press_event.pressure);
+    if (loop_count == log_on_count){
+    
+      if (dps.temperatureAvailable())
+        {
+          dps_temperature->getEvent(&temp_event);
+          Serial.println(temp_event.temperature);
+        }   
+      else
+        {
+          Serial.println("NaN");
+        }
+
+      if (dps.pressureAvailable())
+        {
+          dps_pressure->getEvent(&press_event);
+          Serial.println(press_event.pressure);
+        }
+      else
+        {
+          dps_pressure->getEvent(&press_event);
+          Serial.println(press_event.pressure);
+        }
+    
+      loop_count=0;
+    
     }
     
+    else
+      loop_count++;
+      
   }
+
 
   if (Serial.available()){
     
-    char serial_read = Serial.read();
+    int serial_read = Serial.parseInt();
     
-    if (serial_read == '0'){
+    if (!serial_read){
       logging = 0;
-      lcd.print(0);}
+      }
     else{
       logging = 1;
-      lcd.print(1);}
-      
+      log_on_count = serial_read;
+      loop_count = log_on_count;
+      }
+    lcd.print(serial_read);
     while (Serial.available())
       serial_read = Serial.read();
   }
 
-
   delay(1000);
-
 }
