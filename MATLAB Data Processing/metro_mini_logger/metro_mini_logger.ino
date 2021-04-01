@@ -141,8 +141,7 @@ void loop()
     
     }
     
-    else
-      loop_count++;
+    loop_count++;
       
   }
 

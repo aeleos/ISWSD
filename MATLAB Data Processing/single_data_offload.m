@@ -4,7 +4,7 @@ STEP = 1; % seconds between data measurements
 PORT = '/dev/ttyUSB0'; % serial port
 PATH = '';    % path to where the data files should be saved
 
-REFRESH = 1; % data points before updating plot
+REFRESH = 10; % data points before updating plot
 
 
 % SETUP
