@@ -7,6 +7,7 @@ points = data(:,1);
 pressure = data(:,2);
 temperature = data(:,3);
 height = 44330 * (1-(pressure/1013.25).^.1903);
+height = height - height(1);
 
 fig = figure;
 tiledlayout(3,1);
