@@ -11,12 +11,20 @@ temperature2 = data(:,5);
 height1 = 44330 * (1-(pressure1/1013.25).^.1903);
 height1 = height1 - height1(1);
 height2 = 44330 * (1-(pressure2/1013.25).^.1903);
-height2 = height2 -height2(2);
+height2 = height2 -height2(1);
 pressure1 = pressure1 - pressure1(1);
 pressure2 = pressure2 - pressure2(1);
 
+% pressure1 = pressure1(1:121);
+% pressure2 = pressure2(1:121);
+% height1 = height1(1:121);
+% height2 = height2(1:121);
+% temperature1 = temperature1(1:121);
+% temperature2 = temperature2(1:121);
+% points = points(1:121);
+
 fig = figure;
-tiledlayout(4,1);
+tiledlayout(3,1);
 
 p = nexttile; hold on;
 plot(p,points,pressure1,'r','LineWidth',2);
@@ -35,3 +43,8 @@ plot(points,temperature1,'r','LineWidth',2);
 plot(points,temperature2,'b--','LineWidth',2);
 title('Temperature');
 ylabel('C');
+xlabel('time (s)');
+
+fprintf('Max drift difference: %f m\n',max(abs(height1-height2)));
+fprintf('Mean drift difference: %f m\n',mean(abs(height1-height2)));
+fprintf('Median drift difference: %f m\n',median(abs(height1-height2)));
