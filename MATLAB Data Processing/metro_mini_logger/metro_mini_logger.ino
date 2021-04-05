@@ -119,7 +119,7 @@ void loop()
       if (dps.temperatureAvailable())
         {
           dps_temperature->getEvent(&temp_event);
-          Serial.println(temp_event.temperature);
+          Serial.println(temp_event.temperature,6);
         }   
       else
         {
@@ -129,12 +129,12 @@ void loop()
       if (dps.pressureAvailable())
         {
           dps_pressure->getEvent(&press_event);
-          Serial.println(press_event.pressure);
+          Serial.println(press_event.pressure,6);
         }
       else
         {
           dps_pressure->getEvent(&press_event);
-          Serial.println(press_event.pressure);
+          Serial.println(press_event.pressure,6);
         }
     
       loop_count=0;

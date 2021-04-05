@@ -9,19 +9,25 @@ temperature1 = data(:,3);
 pressure2 = data(:,4);
 temperature2 = data(:,5);
 height1 = 44330 * (1-(pressure1/1013.25).^.1903);
-height1 = height1 - height1(1);
 height2 = 44330 * (1-(pressure2/1013.25).^.1903);
+
+START_POINT = 1;
+END_POINT = 121;
+
+pressure1 = pressure1(START_POINT:END_POINT);
+pressure2 = pressure2(START_POINT:END_POINT);
+height1 = height1(START_POINT:END_POINT);
+height2 = height2(START_POINT:END_POINT);
+temperature1 = temperature1(START_POINT:END_POINT);
+temperature2 = temperature2(START_POINT:END_POINT);
+points = points(START_POINT:END_POINT);
+
+height1 = height1 - height1(1);
 height2 = height2 -height2(1);
 pressure1 = pressure1 - pressure1(1);
 pressure2 = pressure2 - pressure2(1);
 
-% pressure1 = pressure1(1:121);
-% pressure2 = pressure2(1:121);
-% height1 = height1(1:121);
-% height2 = height2(1:121);
-% temperature1 = temperature1(1:121);
-% temperature2 = temperature2(1:121);
-% points = points(1:121);
+difference = abs(height1-height2)*100;
 
 fig = figure;
 tiledlayout(3,1);
@@ -39,12 +45,11 @@ title('Altitude');
 ylabel('m');
 
 t = nexttile; hold on;
-plot(points,temperature1,'r','LineWidth',2);
-plot(points,temperature2,'b--','LineWidth',2);
-title('Temperature');
-ylabel('C');
+plot(points,difference,'g','LineWidth',2);
+title('Height difference');
+ylabel('cm');
 xlabel('time (s)');
 
-fprintf('Max drift difference: %f m\n',max(abs(height1-height2)));
-fprintf('Mean drift difference: %f m\n',mean(abs(height1-height2)));
-fprintf('Median drift difference: %f m\n',median(abs(height1-height2)));
+fprintf('Max drift difference: %f cm\n',max(difference));
+fprintf('Mean drift difference: %f cm\n',mean(difference));
+fprintf('Median drift difference: %f cm\n',median(difference));
