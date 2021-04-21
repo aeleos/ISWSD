@@ -29,6 +29,9 @@
 
 #include "lcd.h"
 #include <Adafruit_DPS310.h>
+#include <SPI.h>
+#include <SD.h>
+//#include <SimpleKalmanFilter.h>
 
 /*
    ------------------------------------------------------------------
@@ -50,7 +53,11 @@ Adafruit_Sensor *dps_temperature = dps.getTemperatureSensor();
 
 sensors_event_t temp_event,press_event;
 
+//SimpleKalmanFilter altitude_kf = SimpleKalmanFilter(.1, .1, 0.01);
 
+
+char filename[8] = "XXX.csv";
+float value;
 
 /*
   ------------------------------------------------------------------
@@ -59,12 +66,6 @@ sensors_event_t temp_event,press_event;
 */
 
 LCD lcd(0x27, 20, 4);
-
-
-
-bool logging = 0;
-unsigned int loop_count = 0;
-unsigned int log_on_count;
 
 /*
    ------------------------------------------------------------------
@@ -75,7 +76,11 @@ unsigned int log_on_count;
 */
 
 void setup()
-{
+{   
+   randomSeed(analogRead(2));
+   pinMode(2, INPUT_PULLUP);
+
+  
 
   // Startup Serial
   Serial.begin(115200);
@@ -97,7 +102,55 @@ void setup()
   dps.setMode(DPS310_CONT_PRESSURE);
   dps.configurePressure(DPS310_64HZ, DPS310_64SAMPLES);
 
+  //Serial.print("Initializing SD card...");
+
+  // see if the card is present and can be initialized:
+  if (!SD.begin(10)) {
+    //Serial.println("Card failed, or not present");
+    // don't do anything more:
+    while (1);
+  }
+  //Serial.println("card initialized.");
+
+
+  unsigned int file_number = random(0,999);
+  int i = file_number % 100;
+  int j = i % 10;
+  filename[2] = j + 0x30;
+  filename[1] = int((i - j) / 10) + 0x30;
+  filename[0] = int((file_number - i - j) / 100) + 0x30;
+  File myFile = SD.open(filename, FILE_WRITE);
+  //Serial.println(filename);
+  myFile.println("hPa");
+  myFile.close();
+  
+
+  // TIMER 1 for interrupt frequency 4 Hz:
+    cli(); // stop interrupts
+    TCCR1A = 0; // set entire TCCR1A register to 0
+    TCCR1B = 0; // same for TCCR1B
+    // set compare match register for 4 Hz increments
+    OCR1A = 62499; // = 16000000 / (64 * 4) - 1 (must be <65536)
+    // turn on CTC mode
+    TCCR1B |= (1 << WGM12);
+    // Set CS12, CS11 and CS10 bits for 64 prescaler
+    TCCR1B |= (0 << CS12) | (1 << CS11) | (1 << CS10);
+    // enable timer compare interrupt
+    TIMSK1 |= (1 << OCIE1A);
+    while (!digitalRead(2));
+    //Serial.println("Beginning logging");
+    TCNT1  = 0; // initialize counter value to 0
+    sei(); // allow interrupts
+
   // done
+}
+
+ISR(TIMER1_COMPA_vect){ 
+          File myFile = SD.open(filename, FILE_WRITE);
+          myFile.println(value,6);
+          myFile.close();
+          //Serial.println(TCNT1*.000004,3);
+
 }
 
 /*
@@ -110,58 +163,11 @@ void setup()
 
 void loop()
 {
-  lcd.progress_loop(0,0,1);
-
-  if (logging){
-
-    if (loop_count == log_on_count){
-    
-      if (dps.temperatureAvailable())
-        {
-          dps_temperature->getEvent(&temp_event);
-          Serial.println(temp_event.temperature,6);
-        }   
-      else
-        {
-          Serial.println("NaN");
-        }
-
-      if (dps.pressureAvailable())
-        {
-          dps_pressure->getEvent(&press_event);
-          Serial.println(press_event.pressure,6);
-        }
-      else
-        {
-          dps_pressure->getEvent(&press_event);
-          Serial.println(press_event.pressure,6);
-        }
-    
-      loop_count=0;
-    
-    }
-    
-    loop_count++;
-      
+  if (dps.temperatureAvailable())
+  {
+    dps_temperature->getEvent(&temp_event);
+    dps_pressure->getEvent(&press_event);
   }
-
-
-  if (Serial.available()){
-    
-    int serial_read = Serial.parseInt();
-    
-    if (!serial_read){
-      logging = 0;
-      }
-    else{
-      logging = 1;
-      log_on_count = serial_read;
-      loop_count = log_on_count;
-      }
-    lcd.print(serial_read);
-    while (Serial.available())
-      serial_read = Serial.read();
-  }
-
-  delay(1000);
+  value = press_event.pressure;
+  delay(.2);
 }
