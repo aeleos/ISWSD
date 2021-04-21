@@ -125,21 +125,19 @@ void setup()
   myFile.close();
   
 
-  // TIMER 1 for interrupt frequency 4 Hz:
-    cli(); // stop interrupts
-    TCCR1A = 0; // set entire TCCR1A register to 0
-    TCCR1B = 0; // same for TCCR1B
-    // set compare match register for 4 Hz increments
+  // TIMER 1 @ 4 Hz:
+    cli(); 
+    TCCR1A = 0; 
+    TCCR1B = 0; 
     OCR1A = 62499; // = 16000000 / (64 * 4) - 1 (must be <65536)
-    // turn on CTC mode
-    TCCR1B |= (1 << WGM12);
-    // Set CS12, CS11 and CS10 bits for 64 prescaler
-    TCCR1B |= (0 << CS12) | (1 << CS11) | (1 << CS10);
-    // enable timer compare interrupt
-    TIMSK1 |= (1 << OCIE1A);
-    while (!digitalRead(2));
+    TCCR1B |= (1 << WGM12); // turn on CTC mode
+    TCCR1B |= (0 << CS12) | (1 << CS11) | (1 << CS10); // Prescalar = 64
+    TIMSK1 |= (1 << OCIE1A); // enable interrupt
+    
+    while (!digitalRead(2)); // wait for button push to enable interrupts
     //Serial.println("Beginning logging");
-    TCNT1  = 0; // initialize counter value to 0
+    
+    TCNT1  = 0; // counter value initialized to 0
     sei(); // allow interrupts
 
   // done
