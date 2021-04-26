@@ -145,18 +145,16 @@ Dataset *data;
 // Enum that tracks which the device is in inside of the state machine
 enum state_indicator
 {
-  NO_GPS_LOCK,
-  READY_FOR_ZERO_SET,
-  CONFIRM_ZERO_SET,
-  READY_FOR_LOCATION,
-  CONFIRM_SAVE_LOCATION,
+  NO_SD,
+  READY_FOR_START,
+  DEVICE_RUNNING,
 };
 
 struct state
 {
   // Track the current and previous state
-  state_indicator current = NO_GPS_LOCK;
-  state_indicator previous = CONFIRM_SAVE_LOCATION;
+  state_indicator current = NO_SD;
+  state_indicator previous = READY_FOR_START;
 
   // track how many times we have set the zero, and how many measurements have
   // been taken
@@ -165,21 +163,6 @@ struct state
 
   // kalman filter for the
   SimpleKalmanFilter altitude_kf = SimpleKalmanFilter(0.001, 0.01, 0.01);
-
-  // track the most recent, last and zero gps data
-  gps_data_struct gps_data_cur;
-  gps_data_struct gps_data_prev;
-  gps_data_struct gps_data_zero;
-  gps_data_struct gps_data_saved;
-
-  // track the most recent, last and zero dps data
-  dps_data_struct dps_data_cur;
-  dps_data_struct dps_data_prev;
-  dps_data_struct dps_data_zero;
-  dps_data_struct dps_data_saved;
-
-  // track the current pressure at sea level
-  float sea_level_pressure = 1038;
 
   // previous state of each button
   bool last_yes_button = true;
@@ -218,9 +201,6 @@ void setup()
   // Setup the lcd
   lcd.setup();
   lcd.startup_screen();
-
-  // Initialize the GPS serial port
-  gps_ss.begin(GPS_BAUD);
 
   // Initialize the dps310 sensor
   if (!dps.begin_I2C(DPS310_I2CADDR_DEFAULT, &Wire))
@@ -284,16 +264,6 @@ void loop()
 
   bool do_screen_update = (num_loops % 10) == 0;
 
-  if (device_state.current > CONFIRM_ZERO_SET)
-  {
-
-    float altitude = getAltFromSeaLevelPressure(
-        device_state.sea_level_pressure, device_state.dps_data_cur.pres,
-        device_state.dps_data_cur.temp);
-
-    device_state.dps_data_cur.alt_estimate =
-        device_state.altitude_kf.updateEstimate(altitude);
-  }
 
   /*
     ------------------------------------------------------------------
@@ -304,82 +274,40 @@ void loop()
   // do current state actions
   switch (device_state.current)
   {
-  case NO_GPS_LOCK:
+  case NO_SD:
   {
     // update lcd
     if (has_state_changed)
     {
-      lcd.gpslock_screen();
+      lcd.no_sd_screen();
+      lcd.setTopStatusText(F("ISWSD"));
+
     }
 
     break;
   }
-  case READY_FOR_ZERO_SET:
+  case READY_FOR_START:
   {
 
     // update the screen with the current data coming from the sensors
 
     if (has_state_changed)
     {
-      lcd.setTopStatusText(SET_ZERO_TEXT);
-      lcd.take_measurement();
+      lcd.ready_to_start_screen();
+      lcd.setTopStatusText(F("ISWSD"));
     }
 
-    if (do_screen_update || has_state_changed)
-    {
-
-      // lcd.zero_prompt_screen();
-      lcd.print_measurement(
-          device_state.gps_data_cur.lat, device_state.gps_data_cur.lon,
-          device_state.dps_data_cur.pres, device_state.gps_data_cur.alt, true);
-    }
 
     break;
   }
-  case CONFIRM_ZERO_SET:
+  case DEVICE_RUNNING:
   {
 
     if (has_state_changed)
     {
-      lcd.setTopStatusNumber(device_state.num_zero, device_state.num_measurements);
-      lcd.print_measurement(
-          device_state.gps_data_saved.lat, device_state.gps_data_saved.lon,
-          device_state.dps_data_saved.pres, device_state.gps_data_saved.alt, true);
-      lcd.confirm_measurement();
+      // set initial text
     }
 
-    break;
-  }
-  case READY_FOR_LOCATION:
-  {
-
-    if (has_state_changed)
-    {
-      lcd.setTopStatusText(SET_POINT_TEXT);
-      lcd.take_measurement();
-    }
-
-    if (do_screen_update || has_state_changed)
-    {
-      lcd.print_measurement(
-          device_state.gps_data_cur.lat - device_state.gps_data_zero.lat,
-          device_state.gps_data_cur.lon - device_state.gps_data_zero.lon,
-          device_state.dps_data_cur.alt_estimate, device_state.gps_data_cur.alt, false);
-    }
-
-    break;
-  }
-  case CONFIRM_SAVE_LOCATION:
-  {
-
-    if (has_state_changed)
-    {
-      lcd.setTopStatusNumber(device_state.num_zero, device_state.num_measurements);
-      lcd.print_measurement(
-          device_state.gps_data_saved.lat, device_state.gps_data_saved.lon,
-          device_state.dps_data_saved.alt_estimate, device_state.gps_data_saved.alt, false);
-      lcd.confirm_measurement();
-    }
     break;
   }
   }
@@ -396,84 +324,30 @@ void loop()
 
   switch (device_state.current)
   {
-  case NO_GPS_LOCK:
+  case NO_SD:
   {
 
-    if (was_yes_pressed || device_state.gps_data_cur.sats != TinyGPS::GPS_INVALID_SATELLITES)
-      device_state.current = READY_FOR_ZERO_SET;
+    if (card_inserted)
+      device_state.current = READY_FOR_START;
 
     break;
   }
-  case READY_FOR_ZERO_SET:
+  case READY_FOR_START:
   {
 
     if (was_yes_pressed)
     {
-      device_state.current = CONFIRM_ZERO_SET;
-      device_state.dps_data_saved = device_state.dps_data_cur;
-      device_state.gps_data_saved = device_state.gps_data_cur;
-
-      device_state.sea_level_pressure =
-          getSeaLevelPressureFromAlt(device_state.dps_data_saved.pres, device_state.gps_data_saved.alt, device_state.dps_data_saved.temp);
-
+      device_state.current = DEVICE_RUNNING;
     }
 
     break;
   }
-  case CONFIRM_ZERO_SET:
+  case DEVICE_RUNNING:
   {
 
     if (was_yes_pressed)
     {
-
-      device_state.dps_data_zero = device_state.dps_data_saved;
-      device_state.gps_data_zero = device_state.gps_data_saved;
-
-      device_state.num_zero++;
-      device_state.num_measurements = 0;
-
-      data->record_measurement('F', device_state.gps_data_zero.lat, device_state.gps_data_zero.lon,
-                               device_state.dps_data_zero.alt_estimate, device_state.gps_data_zero.alt, 0);
-
-      device_state.current = READY_FOR_LOCATION;
-    }
-
-    if (was_no_pressed)
-    {
-      device_state.current = READY_FOR_ZERO_SET;
-    }
-
-    break;
-  }
-  case READY_FOR_LOCATION:
-  {
-
-    if (was_yes_pressed)
-    {
-      device_state.current = CONFIRM_SAVE_LOCATION;
-      device_state.dps_data_saved = device_state.dps_data_cur;
-      device_state.gps_data_saved = device_state.gps_data_cur;
-    }
-
-    break;
-  }
-  case CONFIRM_SAVE_LOCATION:
-  {
-
-    if (was_yes_pressed)
-    {
-      data->record_measurement('M',
-                               device_state.gps_data_saved.lat,
-                               device_state.gps_data_saved.lon,
-                               device_state.dps_data_saved.alt_estimate,
-                               device_state.gps_data_saved.alt, 0);
-      device_state.num_measurements++;
-      device_state.current = READY_FOR_LOCATION;
-    }
-
-    if (was_no_pressed)
-    {
-      device_state.current = READY_FOR_LOCATION;
+      // we want a measurement
     }
 
     break;
@@ -484,7 +358,7 @@ void loop()
 
   if (has_state_changed || (num_loops % 20 == 0))
   {
-    lcd.setTopStatusIndiciators(card_inserted, device_state.gps_data_cur.sats);
+    lcd.setTopStatusIndiciators(card_inserted, 0);
   }
 
   if (num_loops % 10 == 0)
@@ -513,31 +387,19 @@ static void delay_and_read_sensors(unsigned long ms)
   do
   {
 
-    if (dps.temperatureAvailable())
-    {
-      dps_temperature->getEvent(&sensor_event);
-      device_state.dps_data_prev.temp = device_state.dps_data_cur.temp;
-      device_state.dps_data_cur.temp = sensor_event.temperature;
-    }
+    // if (dps.temperatureAvailable())
+    // {
+    //   dps_temperature->getEvent(&sensor_event);
+    //   device_state.dps_data_prev.temp = device_state.dps_data_cur.temp;
+    //   device_state.dps_data_cur.temp = sensor_event.temperature;
+    // }
 
-    if (dps.pressureAvailable())
-    {
-      dps_pressure->getEvent(&sensor_event);
-      device_state.dps_data_prev.pres = device_state.dps_data_cur.pres;
-      device_state.dps_data_cur.pres = sensor_event.pressure;
-    }
-
-    while (gps_ss.available())
-    {
-      gps.encode(gps_ss.read());
-    }
-
-    device_state.gps_data_prev = device_state.gps_data_cur;
-    device_state.gps_data_cur.sats = gps.satellites();
-    device_state.gps_data_cur.alt = gps.f_altitude();
-    gps.f_get_position(&device_state.gps_data_cur.lat,
-                       &device_state.gps_data_cur.lon,
-                       &device_state.gps_data_cur.age);
+    // if (dps.pressureAvailable())
+    // {
+    //   dps_pressure->getEvent(&sensor_event);
+    //   device_state.dps_data_prev.pres = device_state.dps_data_cur.pres;
+    //   device_state.dps_data_cur.pres = sensor_event.pressure;
+    // }
 
   } while (millis() - start < ms);
 }
