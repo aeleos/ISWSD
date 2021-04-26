@@ -27,7 +27,7 @@ float Dataset::get_zero_pressure(void) {
 }
 
 void Dataset::record_measurement(char c, float x, float y, float meas, float d, unsigned long t) {
-  File myFile = SD.open(filename, FILE_WRITE);
+  File myFile = SD.open(filepath, FILE_WRITE);
   myFile.print(c);
   myFile.print(',');
   myFile.print(d,8);
@@ -39,6 +39,15 @@ void Dataset::record_measurement(char c, float x, float y, float meas, float d, 
   myFile.print(y,8);
   myFile.print(',');
   myFile.println(meas,8);
+  myFile.close();
+  return;
+}
+
+void Dataset::test() {
+  File myFile = SD.open(filepath, FILE_WRITE);
+  for (int i = 0; i < 10; i++) {
+      myFile.print("here");
+  }
   myFile.close();
   return;
 }

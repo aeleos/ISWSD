@@ -9,7 +9,7 @@ class LCD : public LiquidCrystal_I2C
   public:
     LCD(uint8_t addr, uint8_t cols, uint8_t rows);
     void setup(); // setup the lcd conditions
-    void setTopStatusIndiciators(bool card, uint8_t sat); // print the battery percentage in the top right corner
+    void setTopStatusIndiciators(char* text, uint8_t sat); // print the battery percentage in the top right corner
     void setTopStatusText(const __FlashStringHelper* status_text);
     void setTopStatusNumber(uint8_t num_zero, uint8_t num_measurements);
     void progress_loop(uint8_t col, uint8_t row, int loops); // print a spinning wheel, updates after loops calls

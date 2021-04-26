@@ -92,15 +92,14 @@ void LCD::setup()
   return;
 }
 
-void LCD::setTopStatusIndiciators(bool card, uint8_t sat)
+void LCD::setTopStatusIndiciators(char* text, uint8_t sat)
 {
   uint8_t percent = voltage_to_percent();
-
+  LCD::setCursor(9, 0);
+  LCD::print(text);
   LCD::setCursor(15, 0);
-  if (card)
-  {
-    LCD::print(F("C"));
-  }
+  LCD::print(F("C"));
+ 
   LCD::setCursor(17, 0);
   if (percent == 0)
   {

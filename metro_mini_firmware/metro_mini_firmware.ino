@@ -27,7 +27,7 @@
    ------------------------------------------------------------------
 */
 
-#include "FilterButterworth.h">
+#include "FilterButterworth.h"
 #include "data.h"
 #include "lcd.h"
 #include "pinout.h"
@@ -213,10 +213,13 @@ void setup()
   dps.configurePressure(DPS310_64HZ, DPS310_64SAMPLES);
 
   // SD Card
-  data = new Dataset;
   if (SD.begin(SS_PIN))
   {
   }
+
+  data = new Dataset;
+
+  data->test();
 
   // done
 }
@@ -280,7 +283,7 @@ void loop()
     if (has_state_changed)
     {
       lcd.no_sd_screen();
-      lcd.setTopStatusText(F("ISWSD"));
+      lcd.setTopStatusText(F(" ISWSD"));
 
     }
 
@@ -294,7 +297,7 @@ void loop()
     if (has_state_changed)
     {
       lcd.ready_to_start_screen();
-      lcd.setTopStatusText(F("ISWSD"));
+      lcd.setTopStatusText(F(" ISWSD"));
     }
 
 
@@ -358,11 +361,11 @@ void loop()
 
   if (has_state_changed || (num_loops % 20 == 0))
   {
-    lcd.setTopStatusIndiciators(card_inserted, 0);
+    lcd.setTopStatusIndiciators(data->filename, 0);
   }
 
   if (num_loops % 10 == 0)
-    lcd.progress_loop(11, 0, 1);
+    lcd.progress_loop(7, 0, 1);
 
   delay_and_read_sensors(100);
   num_loops++;
