@@ -25,6 +25,7 @@ class LCD : public LiquidCrystal_I2C
     void take_measurement();
     void confirm_measurement();
     void input_measure_zero();
+    void writing_screen();
     void input_zero();
     bool preset_select();
 

@@ -109,6 +109,9 @@ LCD lcd(0x27, 20, 4);
 // GPS Baud Rate
 #define GPS_BAUD 9600
 
+//
+#define TIME_STEP 0.25
+
 // Software Serial object for communciating with GPS
 SoftwareSerial gps_ss(GPS_SS_RX, GPS_SS_TX);
 
@@ -168,6 +171,14 @@ struct state
   bool last_yes_button = true;
   bool last_no_button = true;
   bool last_card_inserted = false;
+
+  float last_pressure = 0.0;
+
+  bool data_writing = false;
+
+  bool request_data = false;
+
+  float time = 0.0;
 };
 
 state device_state;
@@ -219,7 +230,17 @@ void setup()
 
   data = new Dataset;
 
-  data->test();
+
+  cli(); 
+  TCCR1A = 0; 
+  TCCR1B = 0; 
+  OCR1A = 62499; // = 16000000 / (64 * 4) - 1 (must be <65536)
+  TCCR1B |= (1 << WGM12); // turn on CTC mode
+  TCCR1B |= (0 << CS12) | (1 << CS11) | (1 << CS10); // Prescalar = 64
+  TIMSK1 |= (1 << OCIE1A); // enable interrupt
+    
+  TCNT1  = 0; // counter value initialized to 0
+  sei(); // allow interrupts
 
   // done
 }
@@ -265,7 +286,7 @@ void loop()
     lcd.clear();
   }
 
-  bool do_screen_update = (num_loops % 10) == 0;
+  bool do_screen_update = (num_loops % 20) == 0;
 
 
   /*
@@ -283,7 +304,6 @@ void loop()
     if (has_state_changed)
     {
       lcd.no_sd_screen();
-      lcd.setTopStatusText(F(" ISWSD"));
 
     }
 
@@ -297,7 +317,6 @@ void loop()
     if (has_state_changed)
     {
       lcd.ready_to_start_screen();
-      lcd.setTopStatusText(F(" ISWSD"));
     }
 
 
@@ -306,10 +325,19 @@ void loop()
   case DEVICE_RUNNING:
   {
 
-    if (has_state_changed)
-    {
-      // set initial text
+    // set initial text
+    if (yes_button_changed && yes_button) {
+      device_state.request_data = true;
+      lcd.writing_screen();
+
+    } else {
+      if (!device_state.request_data) {
+        lcd.clear();
+        has_state_changed = true;
+      }
+
     }
+    
 
     break;
   }
@@ -361,11 +389,12 @@ void loop()
 
   if (has_state_changed || (num_loops % 20 == 0))
   {
+    lcd.setTopStatusText(F("ISWSD"));
     lcd.setTopStatusIndiciators(data->filename, 0);
   }
 
   if (num_loops % 10 == 0)
-    lcd.progress_loop(7, 0, 1);
+    lcd.progress_loop(6, 0, 1);
 
   delay_and_read_sensors(100);
   num_loops++;
@@ -389,20 +418,28 @@ static void delay_and_read_sensors(unsigned long ms)
   unsigned long start = millis();
   do
   {
+    
+    if (!device_state.data_writing && dps.pressureAvailable()) {
+      dps_pressure->getEvent(&sensor_event);
+      device_state.last_pressure = sensor_event.pressure;
+    }
 
-    // if (dps.temperatureAvailable())
-    // {
-    //   dps_temperature->getEvent(&sensor_event);
-    //   device_state.dps_data_prev.temp = device_state.dps_data_cur.temp;
-    //   device_state.dps_data_cur.temp = sensor_event.temperature;
-    // }
-
-    // if (dps.pressureAvailable())
-    // {
-    //   dps_pressure->getEvent(&sensor_event);
-    //   device_state.dps_data_prev.pres = device_state.dps_data_cur.pres;
-    //   device_state.dps_data_cur.pres = sensor_event.pressure;
-    // }
 
   } while (millis() - start < ms);
+}
+
+
+ISR(TIMER1_COMPA_vect){ 
+  Serial.println("saving data");
+  device_state.data_writing = true;
+  device_state.time += TIME_STEP;
+  data->write_data(device_state.time,device_state.request_data,device_state.last_pressure);
+
+  if (device_state.request_data)
+    device_state.request_data = false;
+
+  device_state.data_writing = false;
+
+  //Serial.println(TCNT1*.000004,3);
+
 }

@@ -95,7 +95,7 @@ void LCD::setup()
 void LCD::setTopStatusIndiciators(char* text, uint8_t sat)
 {
   uint8_t percent = voltage_to_percent();
-  LCD::setCursor(9, 0);
+  LCD::setCursor(8, 0);
   LCD::print(text);
   LCD::setCursor(15, 0);
   LCD::print(F("C"));
@@ -129,6 +129,12 @@ void LCD::setTopStatusNumber(uint8_t num_zero, uint8_t num_measurements)
   LCD::print(num_zero);
   LCD::print(F(":"));
   LCD::print(num_measurements);
+}
+
+void LCD::writing_screen() {
+  LCD::clear();
+  LCD::setCursor(0,1);
+  LCD::print(F("Saving data point..."));
 }
 
 void LCD::progress_loop(uint8_t col, uint8_t row, int loops)
