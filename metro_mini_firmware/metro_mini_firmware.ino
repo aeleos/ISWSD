@@ -151,6 +151,7 @@ enum state_indicator
   NO_SD,
   READY_FOR_START,
   DEVICE_RUNNING,
+  SAVE_POINT,
 };
 
 struct state
@@ -286,7 +287,7 @@ void loop()
     lcd.clear();
   }
 
-  bool do_screen_update = (num_loops % 20) == 0;
+  bool do_screen_update = (num_loops % 40) == 0;
 
 
   /*
@@ -325,21 +326,20 @@ void loop()
   case DEVICE_RUNNING:
   {
 
-    // set initial text
-    if (yes_button_changed && yes_button) {
-      device_state.request_data = true;
-      lcd.writing_screen();
-
-    } else {
-      if (!device_state.request_data) {
-        lcd.clear();
-        has_state_changed = true;
-      }
-
+    if (do_screen_update) {
+      lcd.clear();
     }
+
     
 
     break;
+  }
+  case SAVE_POINT:
+  {
+    if (has_state_changed) {
+      device_state.request_data = true;
+      lcd.writing_screen();
+    }
   }
   }
 
@@ -376,27 +376,33 @@ void loop()
   case DEVICE_RUNNING:
   {
 
-    if (was_yes_pressed)
-    {
-      // we want a measurement
-    }
+    // set initial text
+    if (yes_button_changed && yes_button) {
+      device_state.current = SAVE_POINT;
+    } 
 
     break;
+  }
+  case SAVE_POINT:
+  {
+    if (!device_state.request_data) {
+      device_state.current = DEVICE_RUNNING;
+    }
   }
   }
 
   // wait
 
-  if (has_state_changed || (num_loops % 20 == 0))
+  if (has_state_changed || (num_loops % 40 == 0))
   {
     lcd.setTopStatusText(F("ISWSD"));
     lcd.setTopStatusIndiciators(data->filename, 0);
   }
 
-  if (num_loops % 10 == 0)
+  if (num_loops % 20 == 0)
     lcd.progress_loop(6, 0, 1);
 
-  delay_and_read_sensors(100);
+  delay_and_read_sensors(50);
   num_loops++;
 }
 
