@@ -27,15 +27,11 @@
    ------------------------------------------------------------------
 */
 
-#include "FilterButterworth.h"
 #include "data.h"
 #include "lcd.h"
 #include "pinout.h"
 #include <Adafruit_DPS310.h>
 #include <SD.h>
-#include <SimpleKalmanFilter.h>
-#include <SoftwareSerial.h>
-#include <TinyGPS.h>
 #include <inttypes.h>
 
 /*
@@ -58,35 +54,6 @@ Adafruit_Sensor *dps_temperature = dps.getTemperatureSensor();
 
 sensors_event_t sensor_event;
 
-// https://keisan.casio.com/exec/system/1224575267
-float getSeaLevelPressureFromAlt(float pressure,
-                                 float height,
-                                 float temperature)
-{
-  return (pressure)*pow(
-      (1 - (0.0065 * height) / (temperature + 0.0065 * height + 273.15)),
-      -5.257);
-}
-
-// https://github.com/adafruit/Adafruit_DPS310/blob/master/Adafruit_DPS310.cpp
-// https://keisan.casio.com/exec/system/1224585971
-float getAltFromSeaLevelPressure(float seaLevelPressure,
-                                 float currentPressure,
-                                 float temperature)
-{
-  return 44330 * (1.0 - pow(currentPressure / seaLevelPressure,
-                            0.1903));
-  // return ((pow(seaLevelPressure / currentPressure, -5.257) - 1) *
-  //         (temperature + 273.15)) /
-  //        (0.0065);
-}
-
-struct dps_data_struct
-{
-  float temp = 0.0;
-  float pres = 0.0;
-  float alt_estimate = 0.0;
-};
 
 /*
   ------------------------------------------------------------------
@@ -112,24 +79,6 @@ LCD lcd(0x27, 20, 4);
 //
 #define TIME_STEP 0.25
 
-// Software Serial object for communciating with GPS
-SoftwareSerial gps_ss(GPS_SS_RX, GPS_SS_TX);
-
-// Tiny GPS Object
-TinyGPS gps;
-
-// variables for holding satellites and data age
-
-struct gps_data_struct
-{
-  uint8_t sats = TinyGPS::GPS_INVALID_SATELLITES;
-  long unsigned int age = 0;
-  float lat = 0;
-  float lon = 0;
-  float alt = 0;
-};
-
-//
 
 /*
   ------------------------------------------------------------------
@@ -137,7 +86,7 @@ struct gps_data_struct
   ------------------------------------------------------------------
 */
 
-Dataset *data;
+Dataset data;
 
 /*
   ------------------------------------------------------------------
@@ -160,14 +109,6 @@ struct state
   state_indicator current = NO_SD;
   state_indicator previous = READY_FOR_START;
 
-  // track how many times we have set the zero, and how many measurements have
-  // been taken
-  uint8_t num_zero = 0;
-  uint8_t num_measurements = 0;
-
-  // kalman filter for the
-  SimpleKalmanFilter altitude_kf = SimpleKalmanFilter(0.001, 0.01, 0.01);
-
   // previous state of each button
   bool last_yes_button = true;
   bool last_no_button = true;
@@ -176,6 +117,8 @@ struct state
   float last_pressure = 0.0;
 
   bool request_data = false;
+
+  bool write_data = false;
 
   float time = 0.0;
 };
@@ -229,8 +172,18 @@ void setup()
 
   }
 
-  data = new Dataset;
+  data.init();
 
+  cli(); 
+  TCCR1A = 0; 
+  TCCR1B = 0; 
+  OCR1A = 62499; // = 16000000 / (64 * 4) - 1 (must be <65536)
+  TCCR1B |= (1 << WGM12); // turn on CTC mode
+  TCCR1B |= (0 << CS12) | (1 << CS11) | (1 << CS10); // Prescalar = 64
+  TIMSK1 |= (1 << OCIE1A); // enable interrupt
+    
+  TCNT1  = 0; // counter value initialized to 0
+  sei(); // allow interrupts
 
 
   // done
@@ -358,18 +311,9 @@ void loop()
 
     if (was_yes_pressed)
     {
-      cli(); 
-      TCCR1A = 0; 
-      TCCR1B = 0; 
-      OCR1A = 62499; // = 16000000 / (64 * 4) - 1 (must be <65536)
-      TCCR1B |= (1 << WGM12); // turn on CTC mode
-      TCCR1B |= (0 << CS12) | (1 << CS11) | (1 << CS10); // Prescalar = 64
-      TIMSK1 |= (1 << OCIE1A); // enable interrupt
-        
-      TCNT1  = 0; // counter value initialized to 0
-      sei(); // allow interrupts
 
       device_state.current = DEVICE_RUNNING;
+      device_state.write_data = true;
     }
 
     break;
@@ -397,7 +341,7 @@ void loop()
   if (has_state_changed || (num_loops % 40 == 0))
   {
     lcd.setTopStatusText(F("ISWSD"));
-    lcd.setTopStatusIndiciators(data->filename, 0);
+    lcd.setTopStatusIndiciators(data.filename, 0);
   }
 
   if (num_loops % 20 == 0)
@@ -437,14 +381,17 @@ static void delay_and_read_sensors(unsigned long ms)
 
 
 ISR(TIMER1_COMPA_vect){ 
-  Serial.println("saving data");
-  device_state.time += TIME_STEP;
-  data->write_data(device_state.time,device_state.request_data,device_state.last_pressure);
+  if (device_state.write_data) {
+    Serial.println("saving data");
+    device_state.time += TIME_STEP;
+    data.write_data(device_state.time,device_state.request_data,device_state.last_pressure);
 
-  if (device_state.request_data)
-    device_state.request_data = false;
+    if (device_state.request_data)
+      device_state.request_data = false;
 
-  Serial.println("done");
+    Serial.println("done");
+
+  }
 
   //Serial.println(TCNT1*.000004,3);
 
