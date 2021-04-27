@@ -11,6 +11,9 @@ void Dataset::write_data(float time, bool button, float pressure) {
   Serial.println(pressure,6);
 
   File myFile = SD.open(filename, FILE_WRITE);
+  if (!myFile) {
+    Serial.println("OPENING FILE FAILED");
+  }
   myFile.print(time,4);
   myFile.print(",");
   myFile.print(button);

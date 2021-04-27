@@ -175,8 +175,6 @@ struct state
 
   float last_pressure = 0.0;
 
-  bool data_writing = false;
-
   bool request_data = false;
 
   float time = 0.0;
@@ -225,23 +223,15 @@ void setup()
   dps.configurePressure(DPS310_64HZ, DPS310_64SAMPLES);
 
   // SD Card
-  if (SD.begin(SS_PIN))
+  if (!SD.begin(SS_PIN))
   {
+    Serial.println("initialization failed!");
+
   }
 
   data = new Dataset;
 
 
-  cli(); 
-  TCCR1A = 0; 
-  TCCR1B = 0; 
-  OCR1A = 62499; // = 16000000 / (64 * 4) - 1 (must be <65536)
-  TCCR1B |= (1 << WGM12); // turn on CTC mode
-  TCCR1B |= (0 << CS12) | (1 << CS11) | (1 << CS10); // Prescalar = 64
-  TIMSK1 |= (1 << OCIE1A); // enable interrupt
-    
-  TCNT1  = 0; // counter value initialized to 0
-  sei(); // allow interrupts
 
   // done
 }
@@ -368,6 +358,17 @@ void loop()
 
     if (was_yes_pressed)
     {
+      cli(); 
+      TCCR1A = 0; 
+      TCCR1B = 0; 
+      OCR1A = 62499; // = 16000000 / (64 * 4) - 1 (must be <65536)
+      TCCR1B |= (1 << WGM12); // turn on CTC mode
+      TCCR1B |= (0 << CS12) | (1 << CS11) | (1 << CS10); // Prescalar = 64
+      TIMSK1 |= (1 << OCIE1A); // enable interrupt
+        
+      TCNT1  = 0; // counter value initialized to 0
+      sei(); // allow interrupts
+
       device_state.current = DEVICE_RUNNING;
     }
 
@@ -425,7 +426,7 @@ static void delay_and_read_sensors(unsigned long ms)
   do
   {
     
-    if (!device_state.data_writing && dps.pressureAvailable()) {
+    if (dps.pressureAvailable()) {
       dps_pressure->getEvent(&sensor_event);
       device_state.last_pressure = sensor_event.pressure;
     }
@@ -437,14 +438,13 @@ static void delay_and_read_sensors(unsigned long ms)
 
 ISR(TIMER1_COMPA_vect){ 
   Serial.println("saving data");
-  device_state.data_writing = true;
   device_state.time += TIME_STEP;
   data->write_data(device_state.time,device_state.request_data,device_state.last_pressure);
 
   if (device_state.request_data)
     device_state.request_data = false;
 
-  device_state.data_writing = false;
+  Serial.println("done");
 
   //Serial.println(TCNT1*.000004,3);
 
