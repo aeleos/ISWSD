@@ -92,14 +92,24 @@ void LCD::setup()
   return;
 }
 
-void LCD::setTopStatusIndiciators(char* text, uint8_t sat)
+void LCD::setTopStatusIndiciators(bool card, uint8_t sat)
 {
   uint8_t percent = voltage_to_percent();
-  LCD::setCursor(8, 0);
-  LCD::print(text);
+
+  LCD::setCursor(14, 0);
+  if (sat > 9 && sat < 0xFF)
+  {
+    LCD::print(9);
+  }
+  else if (sat < 9)
+  {
+    LCD::print(sat);
+  }
   LCD::setCursor(15, 0);
-  LCD::print(F("C"));
- 
+  if (card)
+  {
+    LCD::print(F("C"));
+  }
   LCD::setCursor(17, 0);
   if (percent == 0)
   {
@@ -117,7 +127,7 @@ void LCD::setTopStatusIndiciators(char* text, uint8_t sat)
   return;
 }
 
-void LCD::setTopStatusText(const __FlashStringHelper* status_text)
+void LCD::setTopStatusText(const char *status_text)
 {
   LCD::setCursor(0, 0);
   LCD::print(status_text);
@@ -129,12 +139,6 @@ void LCD::setTopStatusNumber(uint8_t num_zero, uint8_t num_measurements)
   LCD::print(num_zero);
   LCD::print(F(":"));
   LCD::print(num_measurements);
-}
-
-void LCD::writing_screen() {
-  LCD::clear();
-  LCD::setCursor(0,1);
-  LCD::print(F("Saving data point..."));
 }
 
 void LCD::progress_loop(uint8_t col, uint8_t row, int loops)
@@ -191,26 +195,6 @@ void LCD::gpslock_screen()
   LCD::setCursor(0, 1);
   LCD::print(F("Satellites: "));
   LCD::print(F("No Lock"));
-  return;
-}
-
-void LCD::no_sd_screen()
-{
-  LCD::clear();
-  LCD::setCursor(0, 1);
-  LCD::print(F("Insert SD Card"));
-  return;
-}
-
-
-void LCD::ready_to_start_screen()
-{
-  LCD::clear();
-  LCD::setCursor(0, 1);
-  LCD::print(F("Press start on both"));
-  LCD::setCursor(0, 2);
-  LCD::print(F("devices to take data"));
-  LCD::ask_for_start();
   return;
 }
 
@@ -296,14 +280,6 @@ void LCD::confirm_measurement()
   LCD::print(F("Back"));
   return;
 }
-
-void LCD::ask_for_start()
-{
-  LCD::setCursor(LEFT_BUTTON_CURSOR, 3);
-  LCD::print(F("Start"));
-  return;
-}
-
 
 // void LCD::input_zero()
 // {

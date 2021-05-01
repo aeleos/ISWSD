@@ -1,0 +1,5 @@
+{
+    "board": "arduino:avr:uno",
+    "sketch": "metro_mini_firmware\\metro_mini_firmware.ino",
+    "port": "COM5"
+}

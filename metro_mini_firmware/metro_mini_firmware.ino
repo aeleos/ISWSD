@@ -10,108 +10,135 @@
     Our Pin Assignments
 
     D2 is Measure/Yes/Accept, D4 is Zero/No
-    D6 Low Battery Warning, connected to LBO pin, will be pulled to ground if battery is low (can potentionally combine this with A3 if LBO is actually connected to BAT
-    D7, D8 Software Serial for GPS
-    D9 CD SD Card Detect
-    D10 CS, D11 MOSI, D12 MISO, D13 Clock, SPI for SD Card
-    A3 Battery Voltage, connected to BAT pin on PowerBoost
-    A4 Data, A5 Clock I2C for LCD, Altimeter
+    D6 Low Battery Warning, connected to LBO pin, will be pulled to ground if
+   battery is low (can potentionally combine this with A3 if LBO is actually
+   connected to BAT D7, D8 Software Serial for GPS D9 CD SD Card Detect D10 CS,
+   D11 MOSI, D12 MISO, D13 Clock, SPI for SD Card A3 Battery Voltage, connected
+   to BAT pin on PowerBoost A4 Data, A5 Clock I2C for LCD, Altimeter
 
     sudo chmod 777 /dev/ttyUSB0
 */
 
+/*
+   ------------------------------------------------------------------
+   ------------------------------------------------------------------
+   INCLUDES
+   ------------------------------------------------------------------
+   ------------------------------------------------------------------
+*/
 
-
-
-
-//YWROBOT
-//Compatible with the Arduino IDE 1.0
-//Library version:1.1
-#include <Adafruit_DPS310.h>
-#include <SoftwareSerial.h>
-#include <TinyGPS.h>
-#include "lcd.h"
-#include <inttypes.h>
 #include "data.h"
+#include "lcd.h"
 #include "pinout.h"
+#include <Adafruit_DPS310.h>
 #include <SD.h>
+#include <inttypes.h>
 
-//void freeRam ()
-//{
-//  extern int __heap_start, *__brkval;
-//  int v;
-//  Serial.print(F("Free RAM: "));
-//  Serial.println((int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval));
-//  return;
-//}
+/*
+   ------------------------------------------------------------------
+   ------------------------------------------------------------------
+   OBJECTS AND VARIABLES
+   ------------------------------------------------------------------
+   ------------------------------------------------------------------
+*/
 
-void record_measurement(float * h, long * lat, long * lon, unsigned long * d, unsigned long * t, Adafruit_DPS310 * dps, TinyGPS * gps) {
-  sensors_event_t temp_event, pressure_event;
+/*
+   ------------------------------------------------------------------
+   DPS 310 Pressure Sensor
+   ------------------------------------------------------------------
+*/
 
-  while (!dps->temperatureAvailable() || !dps->pressureAvailable()) {
-    continue; // wait until there's something to read
-  }
-
-  dps->getEvents(&temp_event, &pressure_event);
-  gps->get_position(lat, lon);
-  gps->get_datetime(d, t);
-
-
-  return;
-}
-
-// Pressure Sensor Object
 Adafruit_DPS310 dps;
-//Adafruit_Sensor *dps_temp = dps.getTemperatureSensor();
-//Adafruit_Sensor *dps_pressure = dps.getPressureSensor();
+Adafruit_Sensor *dps_pressure = dps.getPressureSensor();
+Adafruit_Sensor *dps_temperature = dps.getTemperatureSensor();
 
-// Liquid Crystal Display Object
-LCD lcd(0x27, 20, 4); // set the LCD address to 0x27 for a 16 chars and 2 line display
+sensors_event_t sensor_event;
 
+
+/*
+  ------------------------------------------------------------------
+  2004A 4x16 LCD
+  ------------------------------------------------------------------
+*/
+
+LCD lcd(0x27, 20, 4);
+
+#define GPS_SEARCH_TEXT "GPS Search"
+#define SET_ZERO_TEXT "Set Zero"
+#define SET_POINT_TEXT "Set Point"
+
+/*
+  ------------------------------------------------------------------
+  NEO-6M GPS
+  ------------------------------------------------------------------
+*/
+
+// GPS Baud Rate
 #define GPS_BAUD 9600
-// Software Serial Object for GPS, (rx, tx)
-SoftwareSerial gps_ss(7, 8);
 
-// GPS Object
-TinyGPS gps;
+//
+#define TIME_STEP 0.25
 
-Dataset* data;
 
-struct state_indicators {
-  unsigned int card_available : 1;
-  unsigned int custom_exists : 1;
-  unsigned int custom_chosen : 1;
-  unsigned int zero_set : 1;
-  unsigned int measurement_count : 6;
-  unsigned int gps_override : 1;
-  unsigned int top_bar_update: 1;
-  unsigned int wait : 1;
-  uint8_t zero_count;
+/*
+  ------------------------------------------------------------------
+  SD CARD
+  ------------------------------------------------------------------
+*/
+
+Dataset data;
+
+/*
+  ------------------------------------------------------------------
+  STATE VARIABLES
+  ------------------------------------------------------------------
+*/
+
+// Enum that tracks which the device is in inside of the state machine
+enum state_indicator
+{
+  NO_SD,
+  READY_FOR_START,
+  DEVICE_RUNNING,
+  SAVE_POINT,
 };
 
-float zero_hPa;
+struct state
+{
+  // Track the current and previous state
+  state_indicator current = NO_SD;
+  state_indicator previous = READY_FOR_START;
 
-uint8_t state = 0;
+  // previous state of each button
+  bool last_yes_button = true;
+  bool last_no_button = true;
+  bool last_card_inserted = false;
 
-typedef union {
-  struct {
-    int gps_lock : 1;
-    int datapoint_limit : 1;
-    int zeropoint_limit : 1;
-    int standard : 1;
-  };
-  uint8_t bit_clear;
-} lcd_state;
+  float last_pressure = 0.0;
 
-lcd_state lcds;
+  bool request_data = false;
 
-struct state_indicators si;
+  bool write_data = false;
 
-bool yes_pushed, no_pushed;
+  float time = 0.0;
+};
+
+state device_state;
+
+uint8_t num_loops;
+
+/*
+   ------------------------------------------------------------------
+   ------------------------------------------------------------------
+   SETUP
+   ------------------------------------------------------------------
+   ------------------------------------------------------------------
+*/
 
 void setup()
 {
 
+  // Setup pinmodes
   pinMode(YES_PIN, INPUT_PULLUP);
   pinMode(NO_PIN, INPUT_PULLUP);
   pinMode(SS_PIN, OUTPUT);
@@ -119,45 +146,18 @@ void setup()
 
   // Startup Serial
   Serial.begin(115200);
-  while (!Serial) delay(10);
 
-  // Initialize the LCD, will call Wire.begin()
-  lcds.bit_clear = 0;
+  // wait for serial to startup
+  while (!Serial)
+    delay(10);
 
-  lcd.setup();                      // initialize the lcd
+  // Setup the lcd
+  lcd.setup();
   lcd.startup_screen();
 
-  // Card detect
-  si.zero_set = 0;
-  si.measurement_count = 0;
-  si.card_available = (bool)digitalRead(CD_PIN);
-  si.gps_override = 0;
-  si.wait = 0;
-  si.zero_count = 1;
-
-  if (! si.card_available) {
-    delete data;
-  }
-  else {
-    data = new Dataset;
-    if (SD.begin(SS_PIN)) {
-      si.custom_exists = data->get_files(&si.zero_count);
-      Serial.print(F("Card with file count "));
-      Serial.println(si.zero_count);
-    }
-    else {
-      delete data;
-      Serial.println(F("Card init failed."));
-      si.card_available = 0;
-    }
-  }
-
-  gps_ss.begin(GPS_BAUD);
-
-  // Initialize Adafruit DPS310
-
-  if (! dps.begin_I2C(DPS310_I2CADDR_DEFAULT, &Wire)) {
-    //Serial.print(F("... "));
+  // Initialize the dps310 sensor
+  if (!dps.begin_I2C(DPS310_I2CADDR_DEFAULT, &Wire))
+  {
     ;
   }
 
@@ -165,236 +165,234 @@ void setup()
   dps.setMode(DPS310_CONT_PRESSURE);
   dps.configurePressure(DPS310_64HZ, DPS310_64SAMPLES);
 
-  //Serial.println(F("Done"));
+  // SD Card
+  if (!SD.begin(SS_PIN))
+  {
+    Serial.println("initialization failed!");
 
-  //Serial.println(F("Sensor Details"));
+  }
 
-  //dps_temp->printSensorDetails();
-  //dps_pressure->printSensorDetails();
+  data.init();
 
-  Serial.println(F("Init. Done"));
+  cli(); 
+  TCCR1A = 0; 
+  TCCR1B = 0; 
+  OCR1A = 62499; // = 16000000 / (64 * 4) - 1 (must be <65536)
+  TCCR1B |= (1 << WGM12); // turn on CTC mode
+  TCCR1B |= (0 << CS12) | (1 << CS11) | (1 << CS10); // Prescalar = 64
+  TIMSK1 |= (1 << OCIE1A); // enable interrupt
+    
+  TCNT1  = 0; // counter value initialized to 0
+  sei(); // allow interrupts
 
+
+  // done
 }
 
+/*
+   ------------------------------------------------------------------
+   ------------------------------------------------------------------
+   LOOP
+   ------------------------------------------------------------------
+   ------------------------------------------------------------------
+*/
 
 void loop()
 {
 
-  delay_and_read_gps(300);
-  uint8_t num_sats = gps.satellites();
-  float h;
-  long lat, lon;
-  unsigned long d = TinyGPS::GPS_INVALID_DATE, t = TinyGPS::GPS_INVALID_TIME;
+  /*
+    ------------------------------------------------------------------
+    PRE-STATE ACTIONS
+    ------------------------------------------------------------------
+  */
 
+  // digital inputs
+  bool yes_button = !digitalRead(YES_PIN);
+  bool no_button = !digitalRead(NO_PIN);
+  bool card_inserted = digitalRead(CD_PIN);
 
+  bool yes_button_changed = yes_button != device_state.last_yes_button;
+  bool no_button_changed = no_button != device_state.last_no_button;
+  bool card_inserted_changed = card_inserted != device_state.last_card_inserted;
 
-  bool yes_pushed = digitalRead(YES_PIN);
-  bool no_pushed = digitalRead(NO_PIN);
+  device_state.last_yes_button = yes_button;
+  device_state.last_no_button = no_button;
+  device_state.last_card_inserted = card_inserted;
 
+  // is this the first time we are on this state
+  bool has_state_changed = false;
 
-  // execution
-  switch (state) {
-    case 0:
-      {
-        si.wait = yes_pushed;
-        break;
-      }
-    case 1:  // no GPS lock
-      {
-        if (! lcds.gps_lock ) {
-          lcds.bit_clear = 0;
-          lcds.gps_lock = 1;
-          lcd.gpslock_screen();
-          si.top_bar_update = 1;
-        }
-
-        si.gps_override = (yes_pushed || si.gps_override);
-        lcd.progress_loop(11, 0, 1);
-
-        delay_and_read_gps(500);
-        if (si.card_available) {
-          data->name_file(si.custom_chosen, si.zero_count);
-        }
-
-        break;
-      }
-
-    case 2: // unset zero or too many datapoints
-      {
-
-        if (si.custom_exists) {
-          lcd.clear();
-          si.custom_chosen = lcd.custom_select();
-        }
-
-        if (si.custom_chosen) {
-          data->get_custom_location();
-          lcd.zero_prompt_screen(data->custom_name);
-        }
-        else {
-          lcd.zero_prompt_screen();
-        }
-
-        if (no_pushed) {
-          state = 3;
-        }
-
-        if (state != 3) {
-          break;
-        }
-      }
-
-    case 3: // too many zeros
-      {
-
-        if (!si.custom_chosen) {
-          si.zero_count = 0;
-          break;
-        }
-
-        if (! lcds.zeropoint_limit) {
-          lcd.zero_max(si.measurement_count);
-          lcds.zeropoint_limit = 1;
-        }
-
-        si.custom_chosen = 0;
-        si.card_available = 0;
-        si.top_bar_update = 1;
-        si.wait = 1;
-        break;
-      }
-
-    case 4: // press for zero
-      {
-
-        lcd.clear();
-        si.top_bar_update = 1;
-
-        if (si.zero_set == 0) {
-          si.zero_set = 1;
-        }
-        else {
-          si.zero_count++;
-        }
-
-        if (si.custom_exists) {
-          lcd.custom_select();
-          while (1) {
-            lcd.top_bar(0, 0xFF, 0);
-            if (!(bool)digitalRead(NO_PIN)) {
-              delay(PIN_DB);
-              si.custom_chosen = 1;
-            }
-            else if (!(bool)digitalRead(NO_PIN)) {
-              delay(PIN_DB);
-              si.custom_chosen = 0;
-            }
-          }
-
-          if (si.custom_chosen) {
-            data->get_custom_location();
-            lcd.zero_prompt_screen(data->custom_name);
-          }
-        }
-        else {
-          lcd.zero_prompt_screen();
-        }
-
-        if (si.card_available) {
-          data->reset();
-          data->name_file(si.custom_chosen, si.zero_count);
-        }
-
-        if (si.card_available) {
-          data->record_measurement(lat, lon, 0.0, d, t);
-        }
-
-        if (si.custom_chosen) {
-          data->get_custom_location();
-          lcd.zero_prompt_screen(data->custom_name);
-        }
-
-        lcd.print_zero(si.zero_count, lat, lon);
-        si.wait = 1;
-        lcds.bit_clear = 0;
-        //Serial.println(F("Exit zero"));
-        break;
-      }
-    case 5: // press for measurement
-      {
-
-        lcd.clear();
-        si.top_bar_update = 1;
-
-        data->record_measurement(lat, lon, h, d, t);
-
-        if (si.custom_chosen) {
-          data->get_custom_location();
-          lcd.print_measurement(si.zero_count, si.measurement_count, lat, lon, h, data->custom_name);
-        } else {
-          lcd.print_measurement(si.zero_count, si.measurement_count, lat, lon, h);
-        }
-
-        lcds.bit_clear = 0;
-        si.wait = 1;
-        si.measurement_count++;
-        //Serial.println(F("Exit meas"));
-        break;
-      }
-    case 6:
-      {
-
-        if (!lcds.standard) {
-          lcd.standard_screen(si.zero_count, si.measurement_count);
-          si.top_bar_update = 1;
-          lcds.bit_clear = 0;
-          lcds.standard = 1;
-        }
-      }
-      break;
-  }
-
-  lcd.top_bar(si.card_available, num_sats, si.top_bar_update);
-  si.top_bar_update = 0;
-
-
-
-
-  // state determination
-  if (si.wait) {
-    state = 0;
-  }
-  else if ( (num_sats == TinyGPS::GPS_INVALID_SATELLITES) && (!si.gps_override)) // no GPS lock
+  // if the state changed, update the variable and the previous
+  if (device_state.current != device_state.previous)
   {
-    state = 1;
+    device_state.previous = device_state.current;
+    has_state_changed = true;
+    lcd.clear();
   }
-  else if ((!si.zero_set) || (si.measurement_count > 50)) // zero needs to be set
+
+  bool do_screen_update = (num_loops % 40) == 0;
+
+
+  /*
+    ------------------------------------------------------------------
+    CURRENT STATE ACTIONS
+    ------------------------------------------------------------------
+  */
+
+  // do current state actions
+  switch (device_state.current)
   {
-    state = 2;
-  }
-  else if (si.zero_count > 99) // too many zeros
+  case NO_SD:
   {
-    state = 3;
+    // update lcd
+    if (has_state_changed)
+    {
+      lcd.no_sd_screen();
+
+    }
+
+    break;
   }
-  else if (no_pushed) // command to zero is input
+  case READY_FOR_START:
   {
-    state = 4;
+
+    // update the screen with the current data coming from the sensors
+
+    if (has_state_changed)
+    {
+      lcd.ready_to_start_screen();
+    }
+
+
+    break;
   }
-  else if (yes_pushed) // command to measure is input
+  case DEVICE_RUNNING:
   {
-    state = 5;
+
+    if (do_screen_update) {
+      lcd.clear();
+    }
+
+    
+
+    break;
   }
-  else { // ready to take measurement
-    state = 6;
+  case SAVE_POINT:
+  {
+    if (has_state_changed) {
+      device_state.request_data = true;
+      lcd.writing_screen();
+    }
   }
+  }
+
+  /*
+    ------------------------------------------------------------------
+    POST STATE TRANSITIONS
+    ------------------------------------------------------------------
+  */
+
+  // do current state actions
+  bool was_yes_pressed = yes_button && yes_button_changed;
+  bool was_no_pressed = no_button && no_button_changed;
+
+  switch (device_state.current)
+  {
+  case NO_SD:
+  {
+
+    if (card_inserted)
+      device_state.current = READY_FOR_START;
+
+    break;
+  }
+  case READY_FOR_START:
+  {
+
+    if (was_yes_pressed)
+    {
+
+      device_state.current = DEVICE_RUNNING;
+      device_state.write_data = true;
+    }
+
+    break;
+  }
+  case DEVICE_RUNNING:
+  {
+
+    // set initial text
+    if (yes_button_changed && yes_button) {
+      device_state.current = SAVE_POINT;
+    } 
+
+    break;
+  }
+  case SAVE_POINT:
+  {
+    if (!device_state.request_data) {
+      device_state.current = DEVICE_RUNNING;
+    }
+  }
+  }
+
+  // wait
+
+  if (has_state_changed || (num_loops % 40 == 0))
+  {
+    lcd.setTopStatusText(F("ISWSD"));
+    lcd.setTopStatusIndiciators(data.filename, 0);
+  }
+
+  if (num_loops % 20 == 0)
+    lcd.progress_loop(6, 0, 1);
+
+  delay_and_read_sensors(50);
+  num_loops++;
 }
 
+// void record_measurement(float val1, float val2, float val3)
+// {
+//   Serial.print("\t");
 
-static void delay_and_read_gps(unsigned long ms) {
+//   Serial.print(val1);
+
+//   Serial.print(" ");
+//   Serial.print(val2);
+
+//   Serial.print(" ");
+//   Serial.println(val3);
+// }
+
+static void delay_and_read_sensors(unsigned long ms)
+{
   unsigned long start = millis();
   do
   {
-    while (gps_ss.available())
-      gps.encode(gps_ss.read());
+    
+    if (dps.pressureAvailable()) {
+      dps_pressure->getEvent(&sensor_event);
+      device_state.last_pressure = sensor_event.pressure;
+    }
+
+
   } while (millis() - start < ms);
+}
+
+
+ISR(TIMER1_COMPA_vect){ 
+  if (device_state.write_data) {
+    Serial.println("saving data");
+    device_state.time += TIME_STEP;
+    data.write_data(device_state.time,device_state.request_data,device_state.last_pressure);
+
+    if (device_state.request_data)
+      device_state.request_data = false;
+
+    Serial.println("done");
+
+  }
+
+  //Serial.println(TCNT1*.000004,3);
+
 }
